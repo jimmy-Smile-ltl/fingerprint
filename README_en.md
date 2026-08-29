@@ -103,6 +103,13 @@ See [`cases/`](cases/README.md) — one directory per case, each with its own RE
 | 10 | `cases/10_webrtc` | 📖 doc | WebRTC fingerprint: real-IP leak behind proxies (STUN/mDNS/IPv6) |
 | 11 | `cases/11_automation_detection` | 📖 doc | Automation detection: webdriver flag, CDP exposure and stealth countermeasures |
 | 12 | `cases/12_font` | 📖 doc | Font anti-crawl (glyph mapping) + font fingerprint (installed-font list) |
+| 13 | `cases/13_aws_waf` | 📖 doc | AWS WAF Bot Control: 405 challenge + visual captcha |
+| 14 | `cases/14_jiasule_521` | 📖 doc | Jiasule CDN 521: double challenge + incremental cookie semantics |
+| 15 | `cases/15_douyin_a_bogus` | 📖 doc | Douyin a_bogus dynamic signature |
+| 16 | `cases/16_xiaohongshu_xs` | 📖 doc | Xiaohongshu x-s/shield signature family |
+| 17 | `cases/17_zhihu_x_zse_96` | 📖 doc | Zhihu x-zse-96 signature |
+| 18 | `cases/18_netease_weapi` | 📖 doc | NetEase weapi two-stage request encryption |
+| 19 | `cases/19_compliance` | 📖 compliance | Crawler legal precedents and boundaries |
 
 ## How It Works
 

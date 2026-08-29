@@ -18,6 +18,13 @@
 | 10 | [`10_webrtc`](10_webrtc/) | WebRTC 指纹：代理下真实 IP 泄露（STUN/mDNS/IPv6） | 📖 文档 | ✅ 来源已标注 |
 | 11 | [`11_automation_detection`](11_automation_detection/) | 自动化检测：webdriver 标记、CDP 暴露与 stealth 对抗 | 📖 文档 | ✅ 来源已标注 |
 | 12 | [`12_font`](12_font/) | 字体反爬（字形映射）+ 字体指纹（安装列表） | 📖 文档 | ✅ 来源已标注 |
+| 13 | [`13_aws_waf`](13_aws_waf/) | AWS WAF Bot Control：405 挑战 + 视觉验证码（60s 时效） | 📖 文档 | ✅ 实战记录 |
+| 14 | [`14_jiasule_521`](14_jiasule_521/) | 加速乐 521：双层挑战 + Cookie 增量语义 | 📖 文档 | ✅ 实战记录 |
+| 15 | [`15_douyin_a_bogus`](15_douyin_a_bogus/) | 抖音 a_bogus 动态签名（插桩/补环境两路线） | 📖 文档 | ✅ 来源已标注 |
+| 16 | [`16_xiaohongshu_xs`](16_xiaohongshu_xs/) | 小红书 x-s/shield 签名族（Web JSVMP + App native） | 📖 文档 | ✅ 来源已标注 |
+| 17 | [`17_zhihu_x_zse_96`](17_zhihu_x_zse_96/) | 知乎 x-zse-96 签名（Webpack 定位 + 双路线复现） | 📖 文档 | ✅ 来源已标注 |
+| 18 | [`18_netease_weapi`](18_netease_weapi/) | 网易云 weapi 两段式接口加密（AES+RSA） | 📖 文档 | ✅ 实战记录 |
+| 19 | [`19_compliance`](19_compliance/) | 爬虫合规：司法判例与合法边界 | 📖 合规 | ✅ 判例已标注 |
 
 > 📖 文档型 = 基于公开资料整理的机制分析与方法论文档，不含可运行代码；
 > 🔧 可运行 = 自带脚本，可直接执行。
