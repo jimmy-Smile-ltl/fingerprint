@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>浏览器指纹实验室 — Canvas · WebGL · Audio · Fonts</title>
+<style>
+  :root {
+    --bg: #0a0e14; --surface: #12171f; --surface2: #1a212e; --border: #252d3a;
+    --text: #e4e8ee; --text2: #9aa4b5; --text3: #5e6d80;
+    --blue: #60a5fa; --green: #4ade80; --amber: #fbbf24; --red: #f87171;
+    --purple: #c084fc; --cyan: #22d3ee;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 17px; }
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.7;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(59,130,246,.06), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(168,85,247,.05), transparent);
+  }
+  .app { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  /* Header */
+  .header { text-align: center; padding: 32px 0 24px; }
+  .header .icon { font-size: 48px; margin-bottom: 8px; }
+  .header h1 { font-size: 30px; font-weight: 800; letter-spacing: -.02em;
+    background: linear-gradient(135deg, var(--blue), var(--cyan), var(--purple));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header .sub { margin-top: 4px; font-size: 14px; color: var(--text3); }
+
+  /* Hero */
+  .hero {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 28px 24px; text-align: center; margin-bottom: 20px; position: relative; overflow: hidden;
+  }
+  .hero::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--blue), var(--cyan), var(--purple)); }
+  .hero .label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--text3); margin-bottom: 10px; }
+  .hero .id {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: clamp(20px, 4.5vw, 32px); font-weight: 700; color: var(--text);
+    word-break: break-all; line-height: 1.3; padding: 6px 22px;
+    background: var(--surface2); border-radius: 8px; display: inline-block; transition: all .3s;
+  }
+  .hero .id.pending { color: var(--text3); }
+  .hero .meta { display: flex; gap: 30px; justify-content: center; margin-top: 14px; font-size: 14px; color: var(--text3); flex-wrap: wrap; }
+  .hero .meta span { display: flex; align-items: center; gap: 6px; }
+  .hero .meta .v { color: var(--text2); font-weight: 600; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+  .pending-anim { animation: pulse 1.5s ease-in-out infinite; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; justify-content: center; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
+  .tabs button {
+    padding: 12px 28px; border: none; background: none; color: var(--text3);
+    cursor: pointer; font-size: 15px; font-weight: 600; transition: all .2s;
+    border-bottom: 2px solid transparent; margin-bottom: -2px; position: relative;
+  }
+  .tabs button:hover { color: var(--text2); }
+  .tabs button.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+  /* Controls */
+  .controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+  .controls button {
+    padding: 10px 22px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface2); color: var(--text2); cursor: pointer;
+    font-size: 14px; font-weight: 500; transition: all .2s; white-space: nowrap;
+  }
+  .controls button:hover { background: #252e3e; border-color: #4a5568; color: var(--text); }
+  .controls button.primary { background: linear-gradient(135deg, #2563eb, #4f46e5); border-color: transparent; color: #fff; font-weight: 700; }
+  .controls button.primary:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* Status */
+  #status { text-align: center; padding: 10px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; font-weight: 600; display: none; }
+  #status.running { display: block; background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.25); color: var(--blue); }
+  #status.done    { display: block; background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.2); color: var(--green); }
+  #status.error   { display: block; background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2); color: var(--red); }
+
+  /* Grid */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; margin-bottom: 16px; }
+
+  /* Card */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: all .2s; }
+  .card:hover { border-color: #334155; }
+  .card-header {
+    padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; user-select: none; border-bottom: 1px solid transparent; transition: .2s;
+  }
+  .card-header:hover { background: rgba(255,255,255,.015); }
+  .card.open .card-header { border-bottom-color: var(--border); }
+  .card-header h3 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .card-header .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .card-header .arrow { font-size: 14px; color: var(--text3); transition: .25s; margin-left: 8px; }
+  .card.open .card-header .arrow { transform: rotate(180deg); }
+
+  .card-body { max-height: 0; overflow: hidden; transition: max-height .4s ease; }
+  .card.open .card-body { max-height: 4000px; }
+  .card-body-inner { padding: 8px 18px 16px; }
+
+  .row { display: flex; justify-content: space-between; align-items: flex-start; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.025); gap: 14px; }
+  .row:last-child { border-bottom: none; }
+  .row .k { color: var(--text3); font-size: 13px; flex-shrink: 0; min-width: 90px; font-weight: 500; }
+  .row .v { font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; font-size: 13px; text-align: right; word-break: break-all; color: var(--text2); line-height: 1.5; }
+  .row .v.warn { color: var(--amber); } .row .v.ok { color: var(--green); } .row .v.bad { color: var(--red); } .row .v.hl { color: var(--blue); }
+
+  .dot.canvas { background: var(--green); box-shadow: 0 0 8px rgba(74,222,128,.5); }
+  .dot.webgl  { background: var(--blue); box-shadow: 0 0 8px rgba(96,165,250,.5); }
+  .dot.audio  { background: var(--amber); box-shadow: 0 0 8px rgba(251,191,36,.5); }
+  .dot.system { background: var(--purple); box-shadow: 0 0 8px rgba(192,132,252,.5); }
+  .dot.detect { background: var(--red); box-shadow: 0 0 8px rgba(248,113,113,.5); }
+
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: 700; letter-spacing: .03em; }
+  .tag.canvas { background: rgba(74,222,128,.13); color: var(--green); }
+  .tag.webgl  { background: rgba(96,165,250,.13); color: var(--blue); }
+  .tag.audio  { background: rgba(251,191,36,.13); color: var(--amber); }
+  .tag.system { background: rgba(192,132,252,.13); color: var(--purple); }
+  .tag.detect { background: rgba(248,113,113,.13); color: var(--red); }
+
+  /* Guide section */
+  .guide { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px 28px; margin-bottom: 16px; }
+  .guide h2 { font-size: 20px; font-weight: 800; margin-bottom: 16px; color: var(--text); }
+  .guide h3 { font-size: 16px; font-weight: 700; margin: 18px 0 8px; color: var(--blue); }
+  .guide p, .guide li { font-size: 14px; color: var(--text2); margin-bottom: 6px; }
+  .guide ul { padding-left: 24px; margin-bottom: 10px; }
+  .guide table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  .guide th { background: var(--surface2); padding: 10px 14px; text-align: left; font-weight: 700; color: var(--text); border-bottom: 2px solid var(--border); }
+  .guide td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.04); color: var(--text2); }
+  .guide code { background: var(--surface2); padding: 2px 7px; border-radius: 4px; font-size: 13px; color: var(--cyan); font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; }
+  .guide pre { background: var(--surface2); padding: 16px 20px; border-radius: 8px; overflow-x: auto; margin: 10px 0; font-size: 13px; line-height: 1.5; }
+  .guide pre code { background: none; padding: 0; color: var(--text); }
+
+  .footer { text-align: center; padding: 30px 0 10px; font-size: 13px; color: var(--text3); }
+  .footer a { color: var(--blue); text-decoration: none; }
+
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: 1fr; }
+    html { font-size: 16px; }
+    .header h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ====== Header ====== -->
+  <header class="header">
+    <div class="icon">🧬</div>
+    <h1>浏览器指纹实验室</h1>
+    <p class="sub">Canvas 指纹 · WebGL GPU 指纹 · Audio 音频指纹 · 字体指纹 · 反指纹检测</p>
+  </header>
+
+  <!-- ====== 综合指纹 ID ====== -->
+  <div class="hero">
+    <div class="label">🔑 你的综合指纹 (Visitor ID)</div>
+    <div class="id pending pending-anim" id="visitorId">等待采集…</div>
+    <div class="meta">
+      <span>⏱ 耗时: <span class="v" id="metaTime">--</span></span>
+      <span>📊 维度数: <span class="v" id="metaDims">--</span></span>
+      <span>🔒 稳定性: <span class="v" id="metaStable">--</span></span>
+    </div>
+  </div>
+
+  <!-- ====== 标签页切换 ====== -->
+  <div class="tabs">
+    <button class="active" onclick="switchTab('collect')" id="tab-collect">📡 指纹采集结果</button>
+    <button onclick="switchTab('guide')" id="tab-guide">📖 Node.js 补环境指南</button>
+  </div>
+
+  <div id="status"></div>
+
+  <!-- ====== 控制按钮 ====== -->
+  <div class="controls" id="ctrl-btns">
+    <button class="primary" onclick="runTest()" id="btnRun">🔄 采集全部指纹</button>
+    <button onclick="runSingleTest('canvas')">🎨 Canvas</button>
+    <button onclick="runSingleTest('webgl')">🖥️ WebGL</button>
+    <button onclick="runSingleTest('audio')">🔊 Audio</button>
+    <button onclick="runSingleTest('anti')">🛡️ 反指纹检测</button>
+    <button onclick="copyReport()">📋 复制报告 JSON</button>
+    <button onclick="showEnvCode()" style="background:#1a3a2a;border-color:#238636;color:#3fb950;font-weight:700">📥 生成环境 JS 文件</button>
+  </div>
+
+  <!-- ====== 环境 JS 代码面板 ====== -->
+  <div id="env-code-panel" style="display:none; margin-bottom: 16px;">
+    <div class="guide" style="margin-bottom:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 style="margin:0">📥 最终环境 JS 文件</h2>
+        <div style="display:flex;gap:8px">
+          <button onclick="copyEnvCode()" style="padding:8px 18px;background:#238636;border:1px solid #238636;border-radius:6px;color:#fff;font-weight:700;cursor:pointer;font-size:13px">📋 一键复制全部代码</button>
+          <button onclick="downloadEnvFile()" style="padding:8px 18px;background:#4f46e5;border:1px solid #4f46e5;border-radius:6px;color:#fff;font-weight:700;cursor:pointer;font-size:13px">💾 下载 fp_env_standalone.js</button>
+          <button onclick="$('env-code-panel').style.display='none'" style="padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);cursor:pointer;font-size:13px">✕ 关闭</button>
+        </div>
+      </div>
+      <p style="margin-bottom:10px;font-size:13px;color:var(--amber)">
+        ⚠️ 面板中显示的是<b>完整可独立运行</b>的 Node.js 环境 JS 文件。
+        已自动注入你当前浏览器的真实指纹数据（Canvas / WebGL / Audio / 字体 / 硬件 / 时区）。
+        复制或下载后，在项目根目录执行 <code>node fp_env_standalone.js</code> 即可。
+      </p>
+      <pre style="max-height:500px;overflow-y:auto" id="env-code-pre"><code id="env-code-content">请先点击"🔄 采集全部指纹"再生成环境文件</code></pre>
+    </div>
+  </div>
+
+  <!-- ====== Tab1: 指纹采集结果 ====== -->
+  <div id="tab-collect-content"><div class="grid" id="grid"></div></div>
+
+  <!-- ====== Tab2: Node.js 补环境指南 ====== -->
+  <div id="tab-guide-content" style="display:none">
+
+    <div class="guide">
+      <h2>📖 如何在 Node.js 中补充浏览器指纹环境</h2>
+      <p>
+        文件 <code>fp_env_patch.js</code> 为 <code>all_fp.js</code> 的每一个指纹维度提供了
+        完整的 Node.js 运行环境。每个浏览器 API 都有对应的模拟实现，
+        <b>且保持正确的原型链</b>，确保 <code>instanceof</code> 检测和 <code>toString</code> 检测都能通过。
+      </p>
+
+      <h3>🔄 快速开始</h3>
+      <pre><code># 安装依赖
+npm install blueimp-md5
+
+# 运行完整测试（默认 Windows + Intel GPU 配置）
+node test_fp_node.js
+
+# 切换设备预设
+node test_fp_node.js --preset macos-chrome
+node test_fp_node.js --preset linux-chrome
+node test_fp_node.js --preset ios-safari
+
+# 环境变量注入自定义值
+FP_GPU_VENDOR="NVIDIA" FP_GPU_RENDERER="RTX 4090" FP_PLATFORM="Win32" node test_fp_node.js</code></pre>
+
+      <h3>🗺️ 指纹维度 → 浏览器 API → Node.js 补丁 对照表</h3>
+      <table>
+        <thead><tr><th>指纹维度</th><th>浏览器 API</th><th>fp_env_patch.js 实现</th><th>原型链</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>🎨 Canvas</b></td>
+            <td><code>document.createElement('canvas')</code><br><code>canvas.getContext('2d')</code><br><code>ctx.fillText / measureText / toDataURL</code></td>
+            <td><code>HTMLCanvasElement.prototype.getContext</code><br><code>CanvasRenderingContext2D.prototype</code><br>返回稳定 Base64 图像数据</td>
+            <td><code>canvas.__proto__ → HTMLCanvasElement.prototype</code><br><code>ctx.__proto__ → CanvasRenderingContext2D.prototype</code></td>
+          </tr>
+          <tr>
+            <td><b>🖥️ WebGL</b></td>
+            <td><code>canvas.getContext('webgl')</code><br><code>gl.getParameter(VENDOR)</code><br><code>gl.getExtension('WEBGL_debug_renderer_info')</code><br><code>gl.createShader / compileShader / drawArrays</code></td>
+            <td><code>WebGLRenderingContext.prototype</code><br>30+ GL 常量 + 完整着色器管线<br>GPU 厂商/型号通过 FP_CONFIG 注入</td>
+            <td><code>gl.__proto__ → WebGLRenderingContext.prototype</code></td>
+          </tr>
+          <tr>
+            <td><b>🔊 Audio</b></td>
+            <td><code>new OfflineAudioContext(1,44100,44100)</code><br><code>ctx.createOscillator()</code><br><code>ctx.createDynamicsCompressor()</code><br><code>ctx.startRendering() → oncomplete</code></td>
+            <td><code>OfflineAudioContext.prototype</code><br>振荡器 → 压缩器 音频管线<br>返回基于 audioSeed 的稳定波形</td>
+            <td><code>ctx instanceof OfflineAudioContext</code><br><code>osc.__proto__ → OscillatorNode.prototype</code></td>
+          </tr>
+          <tr>
+            <td><b>🔤 字体</b></td>
+            <td><code>ctx.font = '72px "Arial", monospace'</code><br><code>ctx.measureText('mmmmmmmmlli').width</code></td>
+            <td><code>measureText</code> 按主字体名返回不同宽度<br>模拟 16 种常见系统字体差异</td>
+            <td>复用 CanvasRenderingContext2D 原型</td>
+          </tr>
+          <tr>
+            <td><b>💻 硬件</b></td>
+            <td><code>navigator.deviceMemory</code><br><code>navigator.hardwareConcurrency</code><br><code>navigator.maxTouchPoints</code><br><code>navigator.platform</code></td>
+            <td><code>Navigator.prototype</code> getter 属性<br>通过 FP_CONFIG 注入</td>
+            <td><code>navigator.__proto__ → Navigator.prototype</code><br><code>navigator instanceof Navigator</code></td>
+          </tr>
+          <tr>
+            <td><b>🌍 时区</b></td>
+            <td><code>Intl.DateTimeFormat().resolvedOptions().timeZone</code><br><code>new Date().getTimezoneOffset()</code><br><code>navigator.languages</code></td>
+            <td>重写 <code>Date.prototype.getTimezoneOffset</code><br>通过 FP_CONFIG.timezone 注入</td>
+            <td>原型链原样保留</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>⚙️ 配置注入方式（3 种）</h3>
+      <table>
+        <thead><tr><th>方式</th><th>示例</th><th>适用场景</th></tr></thead>
+        <tbody>
+          <tr><td><b>1. 环境变量</b></td><td><code>FP_GPU_VENDOR="NVIDIA" node test.js</code></td><td>CI/CD、容器化部署</td></tr>
+          <tr><td><b>2. 预设切换</b></td><td><code>applyPreset('macos-chrome')</code></td><td>快速切换常见设备</td></tr>
+          <tr><td><b>3. 代码注入</b></td><td><code>setFingerprintConfig({ gpuVendor: 'Apple', gpuRenderer: 'M3 Pro' })</code></td><td>精细化控制每个维度</td></tr>
+        </tbody>
+      </table>
+
+      <h3>📝 代码中自定义指纹</h3>
+      <pre><code>// 加载补环境（必须在 import all_fp.js 之前）
+const { setFingerprintConfig, applyPreset } = require('./fp_env_patch.js');
+
+// 方式 A: 使用预设
+applyPreset('macos-chrome');
+
+// 方式 B: 逐项自定义
+setFingerprintConfig({
+  // --- GPU (决定 WebGL 指纹) ---
+  gpuVendor:   'NVIDIA Corporation',
+  gpuRenderer: 'GeForce RTX 4090/PCIe/SSE2',
+
+  // --- 硬件 (决定硬件指纹) ---
+  hardwareConcurrency: 32,
+  deviceMemory: 64,
+
+  // --- Canvas (决定 Canvas 指纹) ---
+  canvasSeed: 'my-custom-machine-v1',
+
+  // --- Audio (决定 Audio 指纹) ---
+  audioSeed: 0.987654321,
+
+  // --- 时区 (决定时区指纹) ---
+  timezone: 'America/New_York',
+  timezoneOffset: 300,
+
+  // --- UA/平台 ---
+  platform: 'Win32',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ...',
+});
+
+// 然后导入采集函数
+const mod = await import('./all_fp.js');
+
+// 现在所有指纹都基于上面的配置生成
+console.log('Canvas:',  mod.getCanvasFingerprint().hash);
+console.log('WebGL:',   mod.getWebGLFingerprint());
+console.log('Audio:',   (await mod.getAudioFingerprint()).hash);
+console.log('Fonts:',   mod.getFontFingerprint());
+console.log('Hardware:', mod.getHardwareFingerprint());
+
+// 综合指纹
+const fp = new mod.BrowserFingerprinter();
+const { visitorId } = await fp.getFingerprint();
+console.log('Visitor ID:', visitorId);</code></pre>
+
+      <h3>🔗 原型链架构（一一对应真实浏览器）</h3>
+      <pre><code>// Window 层
+window.__proto__ = Window.prototype          → instanceof Window ✅
+
+// Navigator 层
+navigator = {}; navigator.__proto__ = Navigator.prototype  → instanceof Navigator ✅
+
+// Screen 层
+screen = new Screen()                         → instanceof Screen ✅
+
+// Document → Canvas 层
+document.__proto__ = Document.prototype       → instanceof Document ✅
+canvas = document.createElement('canvas')
+canvas.__proto__ = HTMLCanvasElement.prototype → has getContext('2d') ✅
+ctx = canvas.getContext('2d')
+ctx.__proto__ = CanvasRenderingContext2D.prototype → 完整 2D API ✅
+
+// WebGL 层
+gl = canvas.getContext('webgl')
+gl.__proto__ = WebGLRenderingContext.prototype → 完整 WebGL API ✅
+
+// Audio 层
+audioCtx = new OfflineAudioContext(1, 44100, 44100)
+audioCtx instanceof OfflineAudioContext       → true ✅
+osc = audioCtx.createOscillator()
+osc.__proto__ = OscillatorNode.prototype      → 完整音频节点 API ✅</code></pre>
+
+      <h3>🎯 4 个预设设备</h3>
+      <table>
+        <thead><tr><th>预设名</th><th>平台</th><th>GPU</th><th>CPU</th><th>RAM</th></tr></thead>
+        <tbody>
+          <tr><td><code>windows-chrome</code></td><td>Win32</td><td>Intel UHD Graphics 630</td><td>16</td><td>8 GB</td></tr>
+          <tr><td><code>macos-chrome</code></td><td>MacIntel</td><td>Apple M3 Pro</td><td>12</td><td>16 GB</td></tr>
+          <tr><td><code>linux-chrome</code></td><td>Linux x86_64</td><td>NVIDIA GeForce RTX 3060</td><td>8</td><td>32 GB</td></tr>
+          <tr><td><code>ios-safari</code></td><td>iPhone</td><td>Apple A17 Pro GPU</td><td>6</td><td>8 GB</td></tr>
+        </tbody>
+      </table>
+
+      <h2 style="margin-top: 36px;">🏗️ 如何从零构建最终的环境 JS 文件</h2>
+      <p>
+        下面以 <code>fp_env_patch.js</code> 的构建过程为例，展示一个<b>通用的、可复现的</b> 5 步补环境方法论。
+        这套方法不仅适用于指纹采集，也适用于任何需要在 Node.js 中运行浏览器 JS 的场景。
+      </p>
+
+      <h3>📐 阶段 0：枚举目标脚本使用的所有浏览器 API</h3>
+      <p>在写任何补丁之前，必须先搞清楚 <b>目标脚本到底调用了哪些浏览器 API</b>。有 3 种分析方法：</p>
+      <table>
+        <thead><tr><th>方法</th><th>命令/工具</th><th>输出</th></tr></thead>
+        <tbody>
+          <tr><td><b>A. 静态搜索</b></td><td>在 all_fp.js 中搜索 <code>document.</code> <code>navigator.</code> <code>window.</code> <code>new </code></td><td>API 调用清单</td></tr>
+          <tr><td><b>B. Proxy 监控</b></td><td><code>watch(obj, name)</code> — 参考 run_js_proto.js 的 watch()</td><td>运行时属性读写日志</td></tr>
+          <tr><td><b>C. 浏览器断点</b></td><td>Chrome DevTools → Sources → XHR/fetch Breakpoints</td><td>调用栈 + 参数值</td></tr>
+        </tbody>
+      </table>
+      <pre><code>// 示例：静态分析 all_fp.js 发现需要这些 API
+// Canvas:   document.createElement('canvas'), canvas.getContext('2d'),
+//           ctx.fillRect, ctx.fillText, ctx.measureText, ctx.font,
+//           ctx.textBaseline, ctx.arc, ctx.stroke, canvas.toDataURL
+// WebGL:    canvas.getContext('webgl'), gl.getParameter, gl.getExtension,
+//           gl.createShader, gl.compileShader, gl.createProgram, ...
+// Audio:    new OfflineAudioContext(), ctx.createOscillator(),
+//           ctx.createDynamicsCompressor(), ctx.startRendering()
+// Navigator:navigator.userAgent, navigator.platform, navigator.hardwareConcurrency, ...
+// Screen:   screen.width, screen.height, screen.colorDepth
+// Intl:     Intl.DateTimeFormat().resolvedOptions().timeZone</code></pre>
+
+      <h3>📐 阶段 1：构建全局骨架（window / document / navigator）</h3>
+      <p>这是所有补环境的基础，必须<b>最先处理</b>。核心原则：</p>
+      <ul>
+        <li><b>window = global</b>（Node.js 全局对象即 window）</li>
+        <li><b>window.__proto__ = Window.prototype</b>（确保 <code>window instanceof Window</code> 为 true）</li>
+        <li>清理 Node.js 特有全局变量（<code>GLOBAL</code>、<code>root</code>、<code>__filename</code>）</li>
+        <li>注入 Node.js 原生对象（Math、Date、JSON、Promise…）</li>
+      </ul>
+      <pre><code>// === 阶段 1 骨架代码 ===
+Window = function Window() {};
+setNativeTag(Window.prototype, 'Window');       // Symbol.toStringTag = "Window"
+window = global;
+window.__proto__ = Window.prototype;            // instanceof Window ✅
+self = top = parent = window;
+
+// 清理 Node 痕迹
+try { delete GLOBAL; } catch(e) {}
+try { delete __filename; } catch(e) {}
+
+// 注入必需全局
+window.Math = Math;
+window.Date = Date;
+window.JSON = JSON;
+window.parseInt = parseInt;
+// ... 其他原生对象</code></pre>
+
+      <h3>📐 阶段 2：构建构造函数 + 原型链（核心）</h3>
+      <p>这是补环境最关键的步骤。真实浏览器中 <b>每个 DOM 对象都有构造函数和原型链</b>，很多脚本会检测 <code>instanceof</code> 和 <code>Object.prototype.toString.call()</code>。</p>
+      <table>
+        <thead><tr><th>步骤</th><th>代码</th><th>验证</th></tr></thead>
+        <tbody>
+          <tr><td>1. 定义构造函数</td><td><code>Navigator = function Navigator() {}</code></td><td><code>Navigator.name === "Navigator"</code></td></tr>
+          <tr><td>2. 定义原型方法/属性</td><td><code>Navigator.prototype = { get userAgent() {...}, ... }</code></td><td>属性可读写</td></tr>
+          <tr><td>3. 设置 Symbol.toStringTag</td><td><code>setNativeTag(Navigator.prototype, 'Navigator')</code></td><td><code>Object.prototype.toString.call(navigator) === "[object Navigator]"</code></td></tr>
+          <tr><td>4. 创建实例</td><td><code>navigator = {}; navigator.__proto__ = Navigator.prototype</code></td><td><code>navigator instanceof Navigator === true</code></td></tr>
+          <tr><td>5. 挂载到 window</td><td><code>window.navigator = navigator</code></td><td>全局可访问</td></tr>
+        </tbody>
+      </table>
+      <pre><code>// === 阶段 2 完整示例：构建 Navigator ===
+// Step 1: 构造函数
+Navigator = function Navigator() {};
+
+// Step 2: 原型（使用 getter 实现动态属性，方便后续注入不同值）
+Navigator.prototype = {
+  get userAgent()           { return FP_CONFIG.userAgent; },
+  get platform()            { return FP_CONFIG.platform; },
+  get hardwareConcurrency() { return FP_CONFIG.hardwareConcurrency; },
+  get deviceMemory()        { return FP_CONFIG.deviceMemory; },
+  get webdriver()           { return false; },
+  get languages()           { return [...FP_CONFIG.languages]; },
+};
+
+// Step 3: toStringTag
+Object.defineProperty(Navigator.prototype, Symbol.toStringTag,
+  { value: 'Navigator', configurable: true });
+
+// Step 4: 创建实例
+navigator = {};
+navigator.__proto__ = Navigator.prototype;
+
+// Step 5: 挂载
+window.navigator = navigator;
+window.clientInformation = navigator;  // 别名</code></pre>
+
+      <h3>📐 阶段 3：逐维度补实现（合成模式 vs 真实数据注入模式）</h3>
+      <p>每个指纹维度支持<b>两种模式</b>：</p>
+      <ul>
+        <li><b>合成模式（默认）</b>：用 seed 生成固定但独特的指纹值，适合测试、批量生成不同设备指纹</li>
+        <li><b>真实数据注入模式</b>：从真实浏览器采集指纹后 <b>原样回放</b>，Node.js 输出与浏览器完全一致</li>
+      </ul>
+
+      <h4 style="margin-top:16px;">步骤 3A: 在浏览器中采集真实指纹数据</h4>
+      <pre><code>// 1. 浏览器打开 test_fp.html，点击"采集全部指纹"
+// 2. 点击"复制报告 JSON"按钮
+// 3. 粘贴保存为 browser_fingerprint.json
+//
+// 报告结构示例：
+{
+  "visitorId": "64e679bd9a92dc6f280b64dae869d365",
+  "elapsed": "42",
+  "components": {
+    "canvas": {
+      "hash": "f555ed1ac8bee633a976418c45f32fbc",
+      "rawData": "data:image/png;base64,iVBORw0KGgoAAAA...",  // ← 真实 Canvas 图像数据
+      "isStable": true
+    },
+    "webglBasic": "vendor:WebKit|renderer:WebKit WebGL|...|unmaskedVendor:...|unmaskedRenderer:ANGLE (...)|extensions:EXT_blend_minmax,...",
+    "webglAdvanced": "174,136,255,255",                         // ← 真实 Shader 渲染像素
+    "audio": {
+      "hash": "6ef2b0eb105fd5946e44a6bc7c760fae",
+      "rawData": "-0.0415566862,-0.0203906745,0.0114788972,..." // ← 真实音频采样点
+    },
+    "fonts": "Helvetica,Georgia,Verdana,Tahoma,Arial,...",      // ← 真实字体列表
+    "hardware": { "deviceMemory": 8, "hardwareConcurrency": 16, ... },
+    "timezone": { "timezone": "Asia/Shanghai", ... }
+  }
+}</code></pre>
+
+      <h4 style="margin-top:16px;">步骤 3B: 一键注入到 Node.js 环境</h4>
+      <pre><code>const { injectRealFingerprint } = require('./fp_env_patch.js');
+
+// 加载浏览器采集的报告
+const browserReport = require('./browser_fingerprint.json');
+
+// 一键注入！所有指纹维度自动更新
+injectRealFingerprint(browserReport);
+
+// 现在导入 all_fp.js，输出的指纹与浏览器完全一致
+const mod = await import('./all_fp.js');
+
+console.log(mod.getCanvasFingerprint().hash);
+// → f555ed1ac8bee633a976418c45f32fbc  ← 与浏览器相同！
+
+console.log((await mod.getAudioFingerprint()).hash);
+// → 6ef2b0eb105fd5946e44a6bc7c760fae  ← 与浏览器相同！
+
+const fp = new mod.BrowserFingerprinter();
+const { visitorId } = await fp.getFingerprint();
+// → 64e679bd9a92dc6f280b64dae869d365  ← 与浏览器相同！</code></pre>
+
+      <h4 style="margin-top:16px;">步骤 3C: 逐字段手动注入（精细控制）</h4>
+      <pre><code>const { setFingerprintConfig } = require('./fp_env_patch.js');
+
+setFingerprintConfig({
+  // --- Canvas: 直接注入真实 toDataURL 结果 ---
+  canvasDataURL: 'data:image/png;base64,iVBORw0KGgoAAAA...',  // 从浏览器复制
+
+  // --- Audio: 直接注入真实采样点数组 ---
+  audioRawSamples: [-0.0415, -0.0203, 0.0114, ...],          // 从浏览器复制
+
+  // --- WebGL: 逐字段注入真实 GPU 值 ---
+  webglVendorRaw:            'WebKit',                          // gl.getParameter(VENDOR)
+  webglRendererRaw:          'WebKit WebGL',                    // gl.getParameter(RENDERER)
+  webglVersionRaw:           'WebGL 1.0 (OpenGL ES 2.0 ...)',  // gl.getParameter(VERSION)
+  webglShadingLangVersionRaw:'WebGL GLSL ES 1.0 (...)',
+  webglUnmaskedVendorRaw:    'Google Inc. (Intel)',             // 真实 GPU 厂商
+  webglUnmaskedRendererRaw:  'ANGLE (Intel, Intel(R) UHD...)',   // 真实 GPU 型号
+  webglExtensionsRaw:        ['EXT_blend_minmax', ...],         // 真实扩展列表
+  webglShaderPixelsRaw:      '174,136,255,255',                 // readPixels 结果
+
+  // --- 字体: 注入真实宽度映射 ---
+  fontWidthsRaw: { "Arial": 89.5, "Times New Roman": 85.2, "Verdana": 102.1 },
+});</code></pre>
+
+      <h4 style="margin-top:16px;">合成模式 vs 真实注入模式 的代码实现</h4>
+      <p>每个关键 API 都遵循 <b>"真实数据优先，合成数据兜底"</b> 的模式：</p>
+      <pre><code>// ===== Canvas toDataURL =====
+HTMLCanvasElement.prototype.toDataURL = function() {
+  // 优先：真实浏览器采集的 DataURL
+  if (FP_CONFIG.canvasDataURL) return FP_CONFIG.canvasDataURL;
+  // 兜底：基于 canvasSeed 生成稳定 Base64
+  return _generateCanvasDataURL(this.width, this.height);
+};
+
+// ===== WebGL getParameter =====
+getParameter: function(pname) {
+  switch (pname) {
+    case VENDOR:   return FP_CONFIG.webglVendorRaw || 'WebKit';  // 真实→兜底
+    case RENDERER: return FP_CONFIG.webglRendererRaw || 'WebKit WebGL';
+    // ...
+  }
+};
+
+// ===== Audio getChannelData =====
+getChannelData: function(channel) {
+  // 优先：真实浏览器采集的采样点数组
+  if (FP_CONFIG.audioRawSamples) return new Float32Array(FP_CONFIG.audioRawSamples);
+  // 兜底：基于 audioSeed 三角函数生成
+  return generateSyntheticSamples(FP_CONFIG.audioSeed);
+};</code></pre>
+
+      <h4 style="margin-top:16px;">步骤 3D: 完整的 Canvas 原型链（带真实数据注入）</h4>
+      <pre><code>// 链路: document.createElement('canvas') → canvas.getContext('2d') → ctx.xxx → canvas.toDataURL()
+//
+// 步骤 1: 定义 CanvasRenderingContext2D 原型（所有绘制方法）
+CanvasRenderingContext2D = function CanvasRenderingContext2D() {};
+const ctx2dProto = CanvasRenderingContext2D.prototype;
+Object.assign(ctx2dProto, {
+  fillStyle: '#000000',           // 属性（会被实例继承）
+  font: '10px sans-serif',
+  textBaseline: 'alphabetic',
+  fillRect: function(){},         // 方法（no-op，不需要真实渲染）
+  fillText: function(){},
+  arc: function(){},
+  stroke: function(){},
+  measureText: function(text) {   // ⚠️ 关键方法！字体指纹依赖它
+    const font = (this.font || '').split(',')[0];
+    if (font.includes('monospace')) return { width: text.length * 8.4 };
+    if (font.includes('Arial'))     return { width: text.length * 7.3 };
+    return { width: text.length * 7.2 };
+  },
+});
+setNativeTag(ctx2dProto, 'CanvasRenderingContext2D');
+
+// 步骤 2: 定义 HTMLCanvasElement 原型（toDataURL 支持真实数据注入）
+HTMLCanvasElement = function HTMLCanvasElement() {};
+HTMLCanvasElement.prototype.getContext = function(type) {
+  if (type === '2d') {
+    const ctx = {};
+    ctx.__proto__ = CanvasRenderingContext2D.prototype;  // ← 原型链关键！
+    ctx.canvas = this;
+    return ctx;
+  }
+  if (type === 'webgl') return _createWebGLContext(this);
+  return null;
+};
+HTMLCanvasElement.prototype.toDataURL = function() {
+  // ★ 优先使用真实浏览器采集的 DataURL
+  if (FP_CONFIG.canvasDataURL) return FP_CONFIG.canvasDataURL;
+  // 回退：基于 canvasSeed 生成
+  return _generateStableDataURL(FP_CONFIG.canvasSeed);
+};
+
+// 步骤 3: document.createElement 返回原型实例
+document.createElement = function(tagName) {
+  if (tagName === 'canvas') {
+    const c = {};
+    c.__proto__ = HTMLCanvasElement.prototype;  // ← 继承 getContext + toDataURL
+    c.width = 280; c.height = 60; c.style = {};
+    return c;
+  }
+  // ... 其他标签
+};</code></pre>
+
+      <h3>📐 阶段 4：toString 伪装（safeFunction）</h3>
+      <p>很多风控脚本会检测函数 <code>toString()</code> 是否返回 <code>"function xxx() { [native code] }"</code>。如果返回的是真实函数体，说明环境被篡改过。</p>
+      <pre><code>// === toString 伪装机制（参考 run_js_proto.js / _ab_env_ok.js）===
+const _native_toString_symbol = Symbol('function_toString');
+
+// 1. 劫持 Function.prototype.toString
+!(function patchToString() {
+  const originToString = Function.prototype.toString;
+  Object.defineProperty(Function.prototype, 'toString', {
+    value: function toString() {
+      // 如果函数上有 _native_toString_symbol 标记，返回伪造字符串
+      return this[_native_toString_symbol] || originToString.call(this);
+    }
+  });
+})();
+
+// 2. 给任意函数打上 native 标记
+function updateFunToString(func) {
+  Object.defineProperty(func, _native_toString_symbol, {
+    value: `function ${func.name || ''}() { [native code] }`
+  });
+}
+
+// 3. 使用
+updateFunToString(Navigator);
+updateFunToString(HTMLCanvasElement);
+updateFunToString(Document);
+// Navigator.toString() → "function Navigator() { [native code] }" ✅</code></pre>
+
+      <h3>📐 阶段 5：验证 — 对比浏览器 vs Node.js 输出</h3>
+      <p>补完环境后，必须<b>逐维度对比</b>浏览器和 Node.js 的输出，确保一致性：</p>
+      <table>
+        <thead><tr><th>验证项</th><th>浏览器预期</th><th>Node.js 验证命令</th></tr></thead>
+        <tbody>
+          <tr><td>Canvas 指纹格式</td><td>32 位 MD5 hex</td><td><code>node -e "require('./fp_env_patch'); import('./all_fp.js').then(m=>console.log(m.getCanvasFingerprint().hash))"</code></td></tr>
+          <tr><td>WebGL GPU 信息</td><td>真实 GPU 型号字符串</td><td><code>node test_fp_node.js</code> 检查 unmaskedRenderer</td></tr>
+          <tr><td>Audio 指纹格式</td><td>32 位 MD5 hex</td><td>检查 Audio Hash 是否 32 字符 hex</td></tr>
+          <tr><td>navigator instanceof</td><td>true</td><td><code>node -e "require('./fp_env_patch'); console.log(navigator instanceof Navigator)"</code></td></tr>
+          <tr><td>toString 伪装</td><td>[native code]</td><td><code>node -e "require('./fp_env_patch'); console.log(Navigator.toString())"</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>🗺️ 完整流程图：从零到最终 env JS 文件</h3>
+      <pre><code>┌─────────────────────────────────────────────────────────┐
+│  Step 0: 枚举 API                                        │
+│  静态搜索 all_fp.js → 找到所有 document./navigator./     │
+│  window./screen./Intl./OfflineAudioContext 调用          │
+│                                                          │
+│  Step 1: 全局骨架                                        │
+│  window = global, __proto__ = Window.prototype           │
+│  注入 Math/Date/JSON/Promise, 清理 Node 变量              │
+│                                                          │
+│  Step 2: 构造函数 + 原型链                                │
+│  每个浏览器对象: 定义构造函数 → 定义 prototype →           │
+│  Symbol.toStringTag → 创建实例 → window 挂载              │
+│                                                          │
+│  Step 3: 逐维度填充实现                                   │
+│  ┌──────────┬──────────────────────────────────┐        │
+│  │ Canvas   │ HTMLCanvasElement + ctx2d 原型    │        │
+│  │ WebGL    │ WebGLRenderingContext 原型 + 常量  │        │
+│  │ Audio    │ OfflineAudioContext 原型 + 管线    │        │
+│  │ Navigator│ getter 属性 → FP_CONFIG           │        │
+│  │ Screen   │ width/height → FP_CONFIG          │        │
+│  │ Fonts    │ measureText 宽度模拟               │        │
+│  └──────────┴──────────────────────────────────┘        │
+│                                                          │
+│  Step 4: toString 伪装                                    │
+│  Function.prototype.toString 劫持 → [native code]         │
+│                                                          │
+│  Step 5: 验证                                            │
+│  浏览器 vs Node.js 逐项对比 → 调试修正                     │
+│                                                          │
+│  ✅ 最终产物: fp_env_patch.js (1500+ 行完整环境)           │
+└─────────────────────────────────────────────────────────┘</code></pre>
+
+      <h3>⚡ 常见坑 & 解决方案</h3>
+      <table>
+        <thead><tr><th>坑</th><th>现象</th><th>解决方案</th></tr></thead>
+        <tbody>
+          <tr><td>原型链缺失</td><td><code>canvas.getContext is not a function</code></td><td>确保 <code>canvas.__proto__ = HTMLCanvasElement.prototype</code>，且该原型上有 getContext 方法</td></tr>
+          <tr><td>构造函数被覆盖</td><td>能定义但后面被 forEach 循环覆盖</td><td>特殊元素（HTMLCanvasElement 等）从通用构造列表中排除</td></tr>
+          <tr><td>getter-only 冲突</td><td><code>Cannot set property crypto of #&lt;Window&gt;</code></td><td>用 <code>Object.defineProperty</code> 替代 <code>Object.assign</code></td></tr>
+          <tr><td>setTimeout 立即执行</td><td>Audio 指纹超时</td><td>保留原始 <code>_setTimeout</code> 引用，不要立即执行回调</td></tr>
+          <tr><td>clearTimeout 空实现</td><td>超时回调污染输出</td><td>使用真实 <code>clearTimeout(id)</code></td></tr>
+          <tr><td>AudioBuffer 采样点不足</td><td>Cannot read property 'toFixed' of undefined</td><td>确保 <code>getChannelData()</code> 返回 ≥5000 个采样点</td></tr>
+          <tr><td>字体 measureText 逻辑错误</td><td>字体指纹检测到 0 个字体</td><td>只检查主字体（逗号前），不检查 fallback 字体</td></tr>
+          <tr><td>strict mode delete 报错</td><td><code>Delete of an unqualified identifier</code></td><td>使用 <code>try { delete GLOBAL; } catch(e) {}</code>，且顶层不加 <code>'use strict'</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ====== Footer ====== -->
+  <div class="footer">
+    基于 <a href="https://blog.csdn.net/u012220174/article/details/157870592" target="_blank">CSDN: 深入浏览器指纹</a>
+    · FingerprintJS 技术
+    · 原型链框架参考 <a href="#">瑞数补环境 run_js_proto.js</a>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ============================================================ -->
+<script type="importmap">
+{ "imports": { "blueimp-md5": "https://esm.sh/blueimp-md5@2.19.0" } }
+</script>
+
+<script type="module">
+import {
+  getCanvasFingerprint, getCanvasFingerprintAdvanced,
+  getWebGLFingerprint, getAdvancedWebGLFingerprint,
+  getAudioFingerprint, getFontFingerprint,
+  getHardwareFingerprint, getTimezoneFingerprint,
+  detectCanvasFarbling, detectWebGLInterception, detectUAReduction,
+  BrowserFingerprinter
+} from './all_fp.js';
+
+Object.assign(window, {
+  _m: { getCanvasFingerprint, getCanvasFingerprintAdvanced, getWebGLFingerprint,
+        getAdvancedWebGLFingerprint, getAudioFingerprint, getFontFingerprint,
+        getHardwareFingerprint, getTimezoneFingerprint,
+        detectCanvasFarbling, detectWebGLInterception, detectUAReduction,
+        BrowserFingerprinter },
+  _lastReport: null
+});
+
+const $ = id => document.getElementById(id);
+const trunc = (s, n=100) => s ? (s.length>n ? s.slice(0,n)+'…' : s) : 'N/A';
+const setStatus = (t, type) => { const e=$('status'); e.textContent=t; e.className=type; };
+
+// Tab switch
+window.switchTab = function(tab) {
+  const isCollect = tab === 'collect';
+  $('tab-collect-content').style.display = isCollect ? '' : 'none';
+  $('tab-guide-content').style.display = isCollect ? 'none' : '';
+  $('ctrl-btns').style.display = isCollect ? '' : 'none';
+  $('tab-collect').classList.toggle('active', isCollect);
+  $('tab-guide').classList.toggle('active', !isCollect);
+  $('status').style.display = 'none';
+  if (!isCollect) $('grid').innerHTML = '';
+};
+
+function card(cat, tagCls, tagTxt, icon, title, rows) {
+  const r = rows.map(r => {
+    let cls = r.w ? 'warn' : r.g ? 'ok' : r.b ? 'bad' : r.h ? 'hl' : '';
+    return `<div class="row"><span class="k">${r.k}</span><span class="v ${cls}">${r.v}</span></div>`;
+  }).join('');
+  return `<div class="card open fp-${cat}">
+    <div class="card-header" onclick="this.closest('.card').classList.toggle('open')">
+      <h3><span class="dot ${cat}"></span>${icon} ${title}</h3>
+      <span><span class="tag ${tagCls}">${tagTxt}</span><span class="arrow">▾</span></span>
+    </div>
+    <div class="card-body"><div class="card-body-inner">${r}</div></div>
+  </div>`;
+}
+
+window.runTest = async function() {
+  const m = window._m, t0 = performance.now();
+  setStatus('⏳ 正在并行采集 Canvas / WebGL / Audio / 字体 / 硬件 / 时区…', 'running');
+  $('btnRun').disabled = true;
+  $('visitorId').textContent = '采集ing…'; $('visitorId').classList.add('pending-anim');
+
+  try {
+    const fp = new m.BrowserFingerprinter();
+    const { visitorId, components: c } = await fp.getFingerprint();
+    const ms = (performance.now()-t0).toFixed(0);
+
+    $('visitorId').textContent = visitorId; $('visitorId').classList.remove('pending-anim','pending');
+    $('metaTime').textContent = ms + 'ms';
+    $('metaDims').textContent = Object.keys(c).length + ' 个维度';
+    $('metaStable').textContent = c.farblingDetected ? '⚠️ 检测到噪声' : '✅ 指纹稳定';
+
+    const cards = [];
+
+    // Canvas
+    cards.push(card('canvas','canvas','CANVAS','🎨','Canvas 像素指纹', [
+      {k:'MD5 哈希', v:c.canvas.hash, h:1},
+      {k:'数据稳定性', v:c.canvas.isStable?'✅ 稳定（无 Farbling 噪声）':'⚠️ 不稳定（检测到 Farbling）', w:!c.canvas.isStable, g:c.canvas.isStable},
+      {k:'原始数据（前80字符）', v:trunc(c.canvas.rawData, 80)}
+    ]));
+
+    // WebGL
+    if (c.webglBasic) {
+      const rows = [{k:'完整指纹串', v:trunc(c.webglBasic, 120)}];
+      c.webglBasic.split('|').forEach(item => { const [k,...v]=item.split(':'); rows.push({k:'  ▸ '+k, v:v.join(':')||'—'}); });
+      cards.push(card('webgl','webgl','WEBGL','🖥️','WebGL GPU 指纹', rows));
+    } else {
+      cards.push(card('webgl','webgl','WEBGL','🖥️','WebGL GPU 指纹', [{k:'状态',v:'❌ 不可用',b:1}]));
+    }
+
+    // WebGL 着色器
+    cards.push(card('webgl','webgl','WEBGL','🔬','WebGL 着色器渲染指纹', [
+      {k:'渲染像素值', v:c.webglAdvanced||'N/A', h:1}
+    ]));
+
+    // Audio — 重点展示
+    cards.push(card('audio','audio','AUDIO','🔊','Audio 音频指纹（振荡器 → 压缩器管线）', [
+      {k:'MD5 哈希', v:c.audio.hash||'—', h:1},
+      {k:'音频采样点（前100字符）', v:trunc(c.audio.rawData,100)},
+      {k:'说明', v:'triangle 10000Hz → DynamicsCompressor → 4500~5000 采样点'}
+    ]));
+
+    // 字体 — 重点展示
+    const fontList = c.fonts ? c.fonts.split(',').filter(Boolean) : [];
+    cards.push(card('system','system','SYSTEM','🔤','字体指纹（Canvas measureText 检测）', [
+      {k:'已安装字体', v:c.fonts||'未检测到'},
+      {k:'字体数量', v:fontList.length + ' 个'},
+      {k:'检测方法', v:'ctx.font="72px 目标字体" → measureText("mmmmmmmmlli").width'},
+      {k:'基线字体', v:'monospace（等宽字体作为基准宽度）'}
+    ]));
+
+    // 硬件
+    const hw=c.hardware;
+    cards.push(card('system','system','SYSTEM','💻','硬件信息', [
+      {k:'设备内存 (RAM)', v:hw.deviceMemory?hw.deviceMemory+' GB':'N/A'},
+      {k:'CPU 逻辑核心数', v:hw.hardwareConcurrency},
+      {k:'触摸点数', v:hw.maxTouchPoints>0?`${hw.maxTouchPoints}（触摸设备）`:'0（非触摸设备）'},
+      {k:'操作系统平台', v:hw.platform}
+    ]));
+
+    // 时区
+    const tz=c.timezone;
+    cards.push(card('system','system','SYSTEM','🌍','时区 & 语言', [
+      {k:'IANA 时区', v:tz.timezone, h:1},
+      {k:'UTC 偏移', v:tz.timezoneOffset+' 分钟'},
+      {k:'偏好语言', v:Array.isArray(tz.languages)?tz.languages.join(', '):tz.languages},
+      {k:'界面语言', v:tz.language}
+    ]));
+
+    // 反指纹检测
+    const fb=c.farblingDetected, wi=c.webglInterception, ua=c.uaReduction;
+    cards.push(card('detect','detect','DETECT','🛡️','反指纹保护检测', [
+      {k:'Canvas Farbling（噪声注入）', v:fb?'⚠️ 已启用 — Brave/Firefox RFP 模式':'✅ 未检测到', w:fb, g:!fb},
+      {k:'WebGL 是否可用', v:wi.webglAvailable?'✅ 是':'❌ 否', g:wi.webglAvailable, b:!wi.webglAvailable},
+      {k:'WEBGL_debug_renderer_info 被拦截', v:wi.debugInfoBlocked?'⚠️ 是（GPU 信息被隐藏）':'✅ 否（可获取真实 GPU）', w:wi.debugInfoBlocked, g:!wi.debugInfoBlocked},
+      {k:'真实 GPU 厂商', v:wi.unmaskedVendor||'(已被拦截)', w:!wi.unmaskedVendor, h:!!wi.unmaskedVendor},
+      {k:'真实 GPU 型号', v:wi.unmaskedRenderer||'(已被拦截)', w:!wi.unmaskedRenderer, h:!!wi.unmaskedRenderer},
+      {k:'UA 精简 (Reduction)', v:ua.isReduced?'⚠️ 已启用（版本号被固定）':'✅ 完整 UA', w:ua.isReduced, g:!ua.isReduced},
+      {k:'Chrome 主版本', v:ua.chromeVersion}
+    ]));
+
+    $('grid').innerHTML = cards.join('');
+    setStatus(`✅ 采集完成 · 耗时 ${ms}ms · 共 ${Object.keys(c).length} 个指纹维度`, 'done');
+    window._lastReport = { visitorId, components:c, elapsed:ms };
+  } catch(e) {
+    $('btnRun').disabled = false; $('visitorId').classList.remove('pending-anim'); $('visitorId').textContent='采集失败';
+    setStatus('❌ 采集失败: '+e.message, 'error'); console.error(e);
+  } finally { $('btnRun').disabled = false; }
+};
+
+window.runSingleTest = async function(type) {
+  const m=window._m, t0=performance.now();
+  setStatus(`⏳ 正在采集 ${type} 指纹…`, 'running');
+  const cards=[];
+  try {
+    switch(type) {
+      case 'canvas': {
+        const a=m.getCanvasFingerprint(), b=m.getCanvasFingerprintAdvanced();
+        cards.push(card('canvas','canvas','CANVAS','🎨','Canvas 基础指纹',[{k:'MD5 哈希',v:a.hash,h:1},{k:'原始数据',v:trunc(a.rawData,80)}]));
+        cards.push(card('canvas','canvas','CANVAS','🎨','Canvas 高级指纹',[{k:'MD5 哈希',v:b.hash,h:1},{k:'稳定性',v:b.isStable?'✅ 稳定':'⚠️ Farbling',w:!b.isStable}]));
+        break;
+      }
+      case 'webgl': {
+        const a=m.getWebGLFingerprint(), b=m.getAdvancedWebGLFingerprint();
+        if(a){const rows=[{k:'完整串',v:trunc(a,110)}];a.split('|').forEach(i=>{const[k,...v]=i.split(':');rows.push({k:'  ▸ '+k,v:v.join(':')||'—'});});cards.push(card('webgl','webgl','WEBGL','🖥️','WebGL GPU 指纹',rows));}
+        else cards.push(card('webgl','webgl','WEBGL','🖥️','WebGL',[{k:'状态',v:'❌ 不可用',b:1}]));
+        cards.push(card('webgl','webgl','WEBGL','🔬','着色器渲染',[{k:'像素值',v:b||'N/A',h:1}]));
+        break;
+      }
+      case 'audio': {
+        const r=await m.getAudioFingerprint();
+        cards.push(card('audio','audio','AUDIO','🔊','Audio 音频指纹',[{k:'MD5 哈希',v:r.hash||'—',h:1},{k:'采样点',v:trunc(r.rawData,110)},{k:'耗时',v:(performance.now()-t0).toFixed(0)+'ms'}]));
+        break;
+      }
+      case 'anti': {
+        const a=m.detectCanvasFarbling(), b=m.detectWebGLInterception(), c=m.detectUAReduction();
+        cards.push(card('detect','detect','DETECT','🛡️','反指纹检测',[
+          {k:'Canvas Farbling',v:a?'⚠️ 已启用':'✅ 未检测到',w:a,g:!a},
+          {k:'WebGL Debug 拦截',v:b.debugInfoBlocked?'⚠️ 是':'✅ 否',w:b.debugInfoBlocked},
+          {k:'真实 GPU',v:b.unmaskedRenderer||'(被拦截)',w:!b.unmaskedRenderer},
+          {k:'UA 精简',v:c.isReduced?'⚠️ 已启用':'✅ 完整',w:c.isReduced}
+        ]));
+        break;
+      }
+    }
+    $('grid').innerHTML=cards.join(''); setStatus(`✅ 完成 · 耗时 ${(performance.now()-t0).toFixed(0)}ms`,'done');
+  } catch(e) { setStatus('❌ 失败: '+e.message,'error'); console.error(e); }
+};
+
+window.copyReport = function() {
+  if(!window._lastReport){ setStatus('⚠️ 还没有数据，请先采集','error'); return; }
+  navigator.clipboard.writeText(JSON.stringify(window._lastReport,null,2)).then(()=>{
+    setStatus('📋 完整指纹报告已复制到剪贴板！','done');
+    setTimeout(()=>$('status').style.display='none',2500);
+  }).catch(()=>{ setStatus('❌ 复制失败','error'); });
+};
+
+// ========== 环境 JS 文件生成 ==========
+window._envCode = null;
+
+window.showEnvCode = function() {
+  const report = window._lastReport;
+  if (!report) { alert('请先点击"🔄 采集全部指纹"采集数据'); return; }
+
+  const c = report.components;
+  const code = generateStandaloneFile(report);
+  window._envCode = code;
+  $('env-code-content').textContent = code;
+  $('env-code-panel').style.display = '';
+  $('env-code-panel').scrollIntoView({ behavior: 'smooth' });
+  setStatus('✅ 环境 JS 文件已生成（已自动注入当前浏览器的真实指纹数据）', 'done');
+};
+
+window.copyEnvCode = function() {
+  if (!window._envCode) { alert('请先生成环境文件'); return; }
+  navigator.clipboard.writeText(window._envCode).then(() => {
+    setStatus('📋 完整环境 JS 代码已复制到剪贴板！粘贴到 fp/ 目录保存为 fp_env_standalone.js 即可', 'done');
+  }).catch(() => setStatus('❌ 复制失败，请手动选中代码复制', 'error'));
+};
+
+window.downloadEnvFile = function() {
+  if (!window._envCode) { alert('请先生成环境文件'); return; }
+  const blob = new Blob([window._envCode], { type: 'application/javascript' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'fp_env_standalone.js';
+  a.click(); URL.revokeObjectURL(url);
+  setStatus('💾 文件已下载: fp_env_standalone.js → 放到 fp/ 目录 → node fp_env_standalone.js', 'done');
+};
+
+function generateStandaloneFile(report) {
+  const c = report.components;
+  const visitorId = report.visitorId;
+  const now = new Date().toISOString();
+
+  const webglParams = {};
+  if (c.webglBasic) {
+    c.webglBasic.split('|').forEach(function(item) {
+      var idx = item.indexOf(':');
+      if (idx > 0) webglParams[item.slice(0,idx)] = item.slice(idx+1);
+    });
+  }
+
+  var audioSamplesArr = 'null';
+  if (c.audio && c.audio.rawData && c.audio.rawData !== 'timeout' && c.audio.rawData !== 'not_available') {
+    var arr = c.audio.rawData.split(',').map(Number).filter(function(n){ return !isNaN(n); });
+    if (arr.length > 0) audioSamplesArr = JSON.stringify(arr);
+  }
+
+  var webglExtStr = 'null';
+  if (webglParams.extensions) {
+    webglExtStr = JSON.stringify(webglParams.extensions.split(','));
+  }
+
+  var hw = c.hardware || {};
+  var tz = c.timezone || {};
+  var ua = (typeof navigator !== 'undefined') ? navigator.userAgent : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36';
+
+  return '/**\n' +
+' * fp_env_standalone.js — 最终环境 JS 文件（自动生成）\n' +
+' *\n' +
+' * 生成时间: ' + now + '\n' +
+' * 来源浏览器指纹 Visitor ID: ' + visitorId + '\n' +
+' * 指纹数据: 已注入当前浏览器的真实 Canvas / WebGL / Audio / 字体 / 硬件 / 时区 数据\n' +
+' *\n' +
+' * 使用方式:\n' +
+' *   1. 将此文件放到 fp/ 目录下\n' +
+' *   2. npm install blueimp-md5\n' +
+' *   3. node fp_env_standalone.js          # 运行验证\n' +
+' *   4. node -e "require(\'./fp_env_standalone\')"  # 作为模块加载\n' +
+' *\n' +
+' * 依赖文件（需在同目录下）:\n' +
+' *   - fp_env_patch.js    (浏览器环境补丁，1600+ 行原型链)\n' +
+' *   - all_fp.js           (指纹采集函数，1000+ 行)\n' +
+' */\n' +
+'\n' +
+'\'use strict\';\n' +
+'\n' +
+'// ================================================================\n' +
+'// 第 1 步: 加载基础浏览器环境（原型链、DOM 构造函数等）\n' +
+'// ================================================================\n' +
+'const { setFingerprintConfig, FP_CONFIG } = require(\'./fp_env_patch.js\');\n' +
+'\n' +
+'// ================================================================\n' +
+'// 第 2 步: 注入真实浏览器指纹数据\n' +
+'//          ↓↓↓ 以下所有值都来自你的真实浏览器 ↓↓↓\n' +
+'// ================================================================\n' +
+'setFingerprintConfig({\n' +
+'  // ----- Canvas 指纹（真实 toDataURL 结果）-----\n' +
+'  canvasDataURL: ' + (c.canvas && c.canvas.rawData ? JSON.stringify(c.canvas.rawData) : 'null') + ',\n' +
+'\n' +
+'  // ----- WebGL GPU 指纹（真实 GPU 参数）-----\n' +
+'  webglVendorRaw:             ' + JSON.stringify(webglParams.vendor || 'WebKit') + ',\n' +
+'  webglRendererRaw:           ' + JSON.stringify(webglParams.renderer || 'WebKit WebGL') + ',\n' +
+'  webglVersionRaw:            ' + JSON.stringify(webglParams.version || 'WebGL 1.0 (OpenGL ES 2.0 Chromium)') + ',\n' +
+'  webglShadingLangVersionRaw: ' + JSON.stringify(webglParams.shadingLangVersion || 'WebGL GLSL ES 1.0 (OpenGL ES GLSL ES 1.0 Chromium)') + ',\n' +
+'  webglUnmaskedVendorRaw:     ' + JSON.stringify(webglParams.unmaskedVendor || '') + ',\n' +
+'  webglUnmaskedRendererRaw:   ' + JSON.stringify(webglParams.unmaskedRenderer || '') + ',\n' +
+'  gpuVendor:                  ' + JSON.stringify(webglParams.unmaskedVendor || '') + ',\n' +
+'  gpuRenderer:                ' + JSON.stringify(webglParams.unmaskedRenderer || '') + ',\n' +
+'  gpuMaxTextureSize:          ' + (parseInt(webglParams.maxTextureSize) || 16384) + ',\n' +
+'  gpuMaxVertexAttribs:        ' + (parseInt(webglParams.maxVertexAttribs) || 16) + ',\n' +
+'  webglExtensionsRaw:         ' + webglExtStr + ',\n' +
+'  webglExtensions:            ' + webglExtStr + ',\n' +
+'\n' +
+'  // ----- WebGL 着色器渲染像素 -----\n' +
+'  webglShaderPixelsRaw: ' + (c.webglAdvanced && c.webglAdvanced !== 'N/A' ? JSON.stringify(c.webglAdvanced) : 'null') + ',\n' +
+'\n' +
+'  // ----- Audio 音频指纹（真实采样点数组）-----\n' +
+'  audioRawSamples: ' + audioSamplesArr + ',\n' +
+'\n' +
+'  // ----- 硬件信息 -----\n' +
+'  platform:             ' + JSON.stringify(hw.platform || 'Win32') + ',\n' +
+'  hardwareConcurrency:  ' + (hw.hardwareConcurrency || 8) + ',\n' +
+'  deviceMemory:         ' + (hw.deviceMemory || 8) + ',\n' +
+'  maxTouchPoints:       ' + (hw.maxTouchPoints || 0) + ',\n' +
+'\n' +
+'  // ----- 时区 & 语言 -----\n' +
+'  timezone:       ' + JSON.stringify(tz.timezone || 'Asia/Shanghai') + ',\n' +
+'  timezoneOffset: ' + (tz.timezoneOffset != null ? tz.timezoneOffset : -480) + ',\n' +
+'  languages:      ' + JSON.stringify(Array.isArray(tz.languages) ? tz.languages : [tz.language || 'zh-CN']) + ',\n' +
+'\n' +
+'  // ----- 用户代理 -----\n' +
+'  userAgent: ' + JSON.stringify(ua) + ',\n' +
+'});\n' +
+'\n' +
+'console.log(\'✅ 指纹数据已注入\');\n' +
+'console.log(\'   GPU:      \' + FP_CONFIG.gpuVendor + \' / \' + FP_CONFIG.gpuRenderer);\n' +
+'console.log(\'   平台:     \' + FP_CONFIG.platform + \', \' + FP_CONFIG.hardwareConcurrency + \' 核, \' + FP_CONFIG.deviceMemory + \'GB\');\n' +
+'console.log(\'   时区:     \' + FP_CONFIG.timezone);\n' +
+'\n' +
+'// ================================================================\n' +
+'// 第 3 步: 导入 all_fp.js，运行指纹验证\n' +
+'// ================================================================\n' +
+'(async function main() {\n' +
+'  const mod = await import(\'./all_fp.js\');\n' +
+'\n' +
+'  console.log(\'\\n\' + \'=\'.repeat(56));\n' +
+'  console.log(\'  验证: Node.js 指纹输出应与浏览器一致\');\n' +
+'  console.log(\'=\'.repeat(56));\n' +
+'\n' +
+'  // Canvas\n' +
+'  const canvas = mod.getCanvasFingerprint();\n' +
+'  console.log(\'\\n🎨 Canvas:  \' + canvas.hash + (\'  (浏览器: ' + (c.canvas ? c.canvas.hash : '') + ')\'));\n' +
+'\n' +
+'  // WebGL\n' +
+'  const webgl = mod.getWebGLFingerprint();\n' +
+'  if (webgl) {\n' +
+'    const wp = {};\n' +
+'    webgl.split(\'|\').forEach(function(i){ const parts=i.split(\':\'); wp[parts[0]]=parts.slice(1).join(\':\'); });\n' +
+'    console.log(\'🖥️  WebGL GPU: \' + (wp.unmaskedVendor||\'\') + \' / \' + (wp.unmaskedRenderer||\'\'));\n' +
+'  }\n' +
+'\n' +
+'  // Audio\n' +
+'  const audio = await mod.getAudioFingerprint();\n' +
+'  console.log(\'🔊 Audio:  \' + (audio.hash || \'N/A\') + (\'  (浏览器: ' + (c.audio ? c.audio.hash : '') + ')\'));\n' +
+'\n' +
+'  // Fonts\n' +
+'  const fonts = mod.getFontFingerprint();\n' +
+'  console.log(\'🔤 Fonts:  \' + (fonts ? fonts.split(\',\').filter(Boolean).length : 0) + \' 个字体\');\n' +
+'\n' +
+'  // Hardware\n' +
+'  const hw2 = mod.getHardwareFingerprint();\n' +
+'  console.log(\'💻 HW:     \' + hw2.platform + \', \' + hw2.hardwareConcurrency + \' 核, \' + hw2.deviceMemory + \'GB\');\n' +
+'\n' +
+'  // Timezone\n' +
+'  const tz2 = mod.getTimezoneFingerprint();\n' +
+'  console.log(\'🌍 TZ:     \' + tz2.timezone + \', UTC offset=\' + tz2.timezoneOffset);\n' +
+'\n' +
+'  // 综合指纹\n' +
+'  const fp = new mod.BrowserFingerprinter();\n' +
+'  const result = await fp.getFingerprint();\n' +
+'  console.log(\'\\n🧬 综合 Visitor ID: \' + result.visitorId);\n' +
+'  console.log(\'   浏览器原始 ID:    ' + visitorId + '\');\n' +
+'  console.log(\'   \' + (result.visitorId === \'' + visitorId + '\' ? \'✅ 完全一致！Node.js 成功复现了浏览器指纹\' : \'⚠️ 存在差异（综合指纹可能受随机因素影响，各子项应一致）\'));\n' +
+'\n' +
+'  console.log(\'\\n\' + \'=\'.repeat(56));\n' +
+'  console.log(\'  环境文件验证完成\');\n' +
+'  console.log(\'=\'.repeat(56));\n' +
+'})();\n';
+}
+
+console.log('%c🧬 浏览器指纹实验室 %c就绪','font-size:18px;font-weight:bold;','');
+setTimeout(()=>window.runTest(), 500);
+</script>
+
+</body>
+</html>

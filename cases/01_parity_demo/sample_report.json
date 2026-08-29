@@ -1,0 +1,47 @@
+{
+  "visitorId": "163337c272489f4d95431df2808ce9b9",
+  "components": {
+    "canvas": {
+      "hash": "f555ed1ac8bee633a976418c45f32fbc",
+      "rawData": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAEISURBVDiNpZMxTsNAEEX/rNeOAwUlHVdA4gAcAokLIOXIlTgAHVeg4QJIOXJ8AIR8CQiJIho7Xq9nKDayEzuWQ/mVNNqd+c+b3cEqY7PGVwCLIAhKEfEL0H0B3AGIT5LkFohj1I6qoih+OJYNrwB8AjgBaAOYAvjtut5dluWBMeYljuMLVSXL9UooAHAXRRFaa8k5AzAF8A7goSiKCwBXALoAXgG01VoC8Mh4tw3gjRk559z8SHsvSRK01tr3g+ltALcAoqp6A/DELK21D5QCvKhqn6RNvbe3+XjNe9n3GQNgBuCDmS/nvh7AkNa6Z+YrAJ2mmC3yP4A2gCGAgfaayr9v8UPiGnYYvQasJMYA7rTWvz0DALMplXg7vAwAAAAASUVORK5CYII=",
+      "isStable": true
+    },
+    "webglBasic": "vendor:WebKit|renderer:WebKit WebGL|version:WebGL 1.0 (OpenGL ES 2.0 Chromium)|shadingLangVersion:WebGL GLSL ES 1.0 (OpenGL ES GLSL ES 1.0 Chromium)|unmaskedVendor:Google Inc. (Intel)|unmaskedRenderer:ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00003E9B) Direct3D11 vs_5_0 ps_5_0, D3D11)|maxTextureSize:16384|maxViewportDims:16384,16384|maxVertexAttribs:16|extensions:ANGLE_instanced_arrays,EXT_blend_minmax,EXT_color_buffer_half_float,EXT_disjoint_timer_query,EXT_float_blend,EXT_frag_depth,EXT_sRGB,EXT_shader_texture_lod,EXT_texture_compression_bptc,EXT_texture_compression_rgtc,EXT_texture_filter_anisotropic,OES_element_index_uint,OES_fbo_render_mipmap,OES_standard_derivatives,OES_texture_float,OES_texture_float_linear,OES_texture_half_float,OES_texture_half_float_linear,OES_vertex_array_object,WEBGL_color_buffer_float,WEBGL_compressed_texture_s3tc,WEBGL_compressed_texture_s3tc_srgb,WEBGL_debug_renderer_info,WEBGL_debug_shaders,WEBGL_depth_texture,WEBGL_draw_buffers,WEBGL_lose_context,WEBGL_multi_draw",
+    "webglAdvanced": "243,12,147,255",
+    "fonts": "Helvetica,Georgia,Verdana,Tahoma,Arial,Times New Roman,Courier New,Segoe UI,Calibri,Consolas,Comic Sans MS,Trebuchet MS,Impact,Lucida Console,Palatino Linotype,Franklin Gothic Medium",
+    "hardware": {
+      "deviceMemory": 8,
+      "hardwareConcurrency": 16,
+      "maxTouchPoints": 0,
+      "platform": "Win32"
+    },
+    "timezone": {
+      "timezone": "Asia/Shanghai",
+      "timezoneOffset": -480,
+      "languages": [
+        "zh-CN",
+        "zh",
+        "en-US"
+      ],
+      "language": "zh-CN"
+    },
+    "farblingDetected": false,
+    "webglInterception": {
+      "webglAvailable": true,
+      "debugInfoBlocked": false,
+      "vendor": "WebKit",
+      "renderer": "WebKit WebGL",
+      "unmaskedVendor": "Google Inc. (Intel)",
+      "unmaskedRenderer": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00003E9B) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    "uaReduction": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+      "isReduced": true,
+      "chromeVersion": "127.0"
+    },
+    "audio": {
+      "hash": "6ef2b0eb105fd5946e44a6bc7c760fae",
+      "rawData": "-0.0415566862,-0.0203906745,0.0114788972,0.0196802616,-0.0022299222,-0.0273585115,-0.0233754758,0.0134224528,0.0512430221,0.0510688536,0.0045264857,-0.0544016287,-0.0764777064,-0.0401540510,0.0280276947,0.0746152103,0.0640465617,0.0079263123,-0.0465315469,-0.0578506403,-0.0243844949,0.0182897877,0.0323424600,0.0118109267,-0.0151904318,-0.0166631620,0.0104822069,0.0367695093,0.0293824766,-0.0135969259,-0.0573287830,-0.0600480884,-0.0121961283,0.0514715277,0.0794937387,0.0476896390,-0.0193539374,-0.0686987415,-0.0636339486,-0.0133566074,0.0376195721,0.0495851636,0.0207772590,-0.0153445927,-0.0241407864,-0.0023113878,0.0213214364,0.0164287351,-0.0168957207,-0.0461501256"
+    }
+  }
+}

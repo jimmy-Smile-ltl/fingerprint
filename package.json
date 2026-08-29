@@ -1,0 +1,24 @@
+{
+  "name": "fingerprint",
+  "version": "1.0.0",
+  "description": "Browser fingerprint collection & Node.js environment emulation toolkit — Canvas / WebGL / Audio / Fonts / Hardware / Timezone",
+  "main": "all_fp.js",
+  "scripts": {
+    "test": "node test_fp_node.js"
+  },
+  "keywords": [
+    "browser-fingerprint",
+    "canvas-fingerprint",
+    "webgl-fingerprint",
+    "audio-fingerprint",
+    "font-fingerprint",
+    "fingerprinting",
+    "anti-bot",
+    "reverse-engineering"
+  ],
+  "author": "JimmySmile",
+  "license": "MIT",
+  "dependencies": {
+    "blueimp-md5": "^2.19.0"
+  }
+}

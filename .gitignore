@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Node
+node_modules/
+package-lock.json
+
+# 测试产物（test_e2e_ruishu.py 的调试输出）
+*_output.txt
+*.log
+
+# 本地浏览器报告（含个人设备指纹，请勿提交）
+browser_fingerprint.json
+
+# 系统文件
+.DS_Store
+Thumbs.db
