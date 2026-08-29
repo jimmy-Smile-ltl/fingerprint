@@ -135,6 +135,29 @@ URL 列表
 - [ ] 待补的部分
 ```
 
+## 🛠️ 从文档到动手
+
+文档型案例读完之后，想动手时的「第一步」：
+
+| 案例 | 想动手时的第一步 |
+|------|----------------|
+| 03 Akamai | 用 `test_fp.html` 采集真实环境报告，对比 sensor_data 收集面，先保住「环境一致」这一关 |
+| 04 京东 h5st | 抓一份当前线上 bundle，定位 `__genKey`，验证魔改 SHA256（用 `"abc"` 测输出） |
+| 05 BOSS 直聘 | 抓包确认 `__zp_stoken__` 生成点，hook cookie setter 观察写入时机 |
+| 06 设备 SDK | 用 `test_fp.html` 对照 SDK 采集面，`setFingerprintConfig` 构造设备画像做差异实验 |
+| 07 Cloudflare | 跑 `cases/08` 对比脚本确认是否 TLS 层拦截，再用三个 detect 函数评估指纹对抗面 |
+| 09 行为轨迹 | 先用贝塞尔曲线生成一段轨迹，观察「平滑曲线被拒」的对照现象 |
+| 10 WebRTC | 在代理环境跑一段 RTCPeerConnection 探测，确认泄露面，再决定禁用/替换策略 |
+| 11 自动化检测 | 真实浏览器 vs 自动化浏览器各跑一次 `test_fp.html`，逐项 diff 决定 stealth 补丁范围 |
+| 12 字体 | 目标站字体文件拉下来用 fontTools 解 cmap；指纹侧直接跑 `getFontFingerprint` |
+| 13 AWS WAF | 抓 405 → problem 完整请求链，确认 hmac_tag/state/key 的 60 秒窗口 |
+| 14 加速乐 | hook `document.cookie` setter 复现实战记录，验证增量语义（可直接参照案例 02 的实现） |
+| 15 抖音 | 选择路线：插桩（参考知乎文）或补环境（`fp_env_patch.js` 做基座） |
+| 16 小红书 | 先确定目标是 Web 端（JSVMP）还是 App 端（native），两端工具链完全不同 |
+| 17 知乎 | 按「全局搜索参数名 → XHR 断点 → 定位函数」走一遍，这是最小练习闭环 |
+| 18 网易云 | Python 直连复现两段式加密（AES+RSA），无需任何补环境 |
+| 19 合规 | 开工前先对照六维度判断表做一次合规自检 |
+
 ## 补充真实案例后
 
 - [ ] 案例 README 写清运行依赖与目标

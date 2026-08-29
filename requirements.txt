@@ -1,0 +1,3 @@
+# test_e2e_ruishu.py / cases/08_tls_fingerprint/demo_tls_compare.py 的 Python 依赖
+requests
+curl_cffi

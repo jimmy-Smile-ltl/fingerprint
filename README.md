@@ -1,6 +1,6 @@
 # fingerprint — 浏览器指纹采集与 Node.js 环境复现工具集
 
-[![Node](https://img.shields.io/badge/Node-20.10+-green.svg)](https://nodejs.org/)
+[![Node](https://img.shields.io/badge/Node-22+-green.svg)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![English](https://img.shields.io/badge/README-English-blue.svg)](README_en.md)
 
@@ -15,8 +15,10 @@
 - [✨ 特性](#-特性)
 - [📁 目录结构](#-目录结构)
 - [🚀 快速开始](#-快速开始)
+- [🧰 API 速览](#-api-速览)
 - [📚 实际案例](#-实际案例)
 - [🧠 工作原理](#-工作原理)
+- [❓ FAQ](#-faq)
 - [⚠️ 免责声明](#️-免责声明)
 - [License](#license)
 
@@ -58,6 +60,8 @@ python -m http.server 8080
 # 保存为 browser_fingerprint.json（已加入 .gitignore，请勿提交）
 ```
 
+![采集页面](docs/test_fp_screenshot.png)
+
 ### 2. Node.js 验证
 
 ```bash
@@ -84,6 +88,39 @@ const result = await fp.getFingerprint();
 ```
 
 > 💡 完整可运行示例见 `cases/01_parity_demo/`。
+
+## 🧰 API 速览
+
+### all_fp.js（指纹采集，ES Module）
+
+| 分类 | 导出 | 说明 |
+|------|------|------|
+| 工具 | `hashString` / `md5Hash` | 字符串哈希 / MD5 |
+| Canvas | `getCanvasFingerprint()` | 基础画布指纹（200x50） |
+| | `getCanvasFingerprintAdvanced()` | 高级画布指纹（280x60，含 Farbling 稳定性检测） |
+| WebGL | `getWebGLContext()` | 获取 WebGL 上下文 |
+| | `getWebGLFingerprint()` | GPU 硬件参数（厂商/渲染器/上限/扩展） |
+| | `getAdvancedWebGLFingerprint()` | 着色器像素级指纹 |
+| Audio | `getAudioFingerprint(timeoutMs)` | 音频渲染波形指纹（异步） |
+| 字体 | `getFontFingerprint(testFonts?)` | 已安装字体检测（16 字体候选） |
+| 硬件 | `getHardwareFingerprint()` | CPU 核心/内存/触点数/平台 |
+| 时区 | `getTimezoneFingerprint()` | 时区 + 偏移 + 语言 |
+| 检测 | `detectCanvasFarbling()` | Canvas 噪声检测（Brave 类） |
+| | `detectWebGLInterception()` | GPU 信息拦截检测 |
+| | `detectUAReduction()` | UA 缩减检测 |
+| 综合 | `BrowserFingerprinter`（class） | `.getComponents()` / `.getFingerprint()`（→ `{visitorId, components}`）/ `.getShortFingerprint()` |
+| | `BrowserFP` | FingerprintJS 兼容接口：`.load()` / `.getVisitorId()` |
+
+### fp_env_patch.js（Node 补环境，CommonJS）
+
+| 导出 | 说明 |
+|------|------|
+| `setFingerprintConfig({...})` | 覆盖任意指纹配置项 |
+| `injectRealFingerprint(report)` | 一键注入 test_fp.html 采集的报告 |
+| `applyPreset(name)` / `PRESETS` | 设备画像预设：`windows-chrome` / `macos-chrome` / `linux-chrome` / `ios-safari` |
+| `FP_CONFIG` | 当前配置对象（六大维度 + 注入槽位） |
+| `updateFunToString` / `setNativeTag` / `defProp` | 原型链 / toString 伪装工具 |
+| `Window` / `Navigator` / `Document` / `HTMLCanvasElement` / `WebGLRenderingContext` / `OfflineAudioContext` … | 环境构造函数（供外部扩展） |
 
 ## 📚 实际案例
 
@@ -138,6 +175,28 @@ const result = await fp.getFingerprint();
 3. **逐维度补实现** — 每个指纹维度「真实数据优先，合成数据兜底」
 4. **toString 伪装** — `Function.prototype.toString` 劫持，返回 `[native code]`
 5. **验证** — 浏览器 vs Node 逐项对比（`test_fp_node.js`）
+
+## ❓ FAQ
+
+**Q: 运行时出现 `MODULE_TYPELESS_PACKAGE_JSON` 警告？**
+无害。`all_fp.js` 是 ES Module 但仓库 `package.json` 没有声明 `"type": "module"`
+（声明了会让 CommonJS 的 `fp_env_patch.js` 失效），Node 靠语法探测自动识别，只是顺手警告。
+想消除它：把 `all_fp.js` 复制为 `all_fp.mjs` 并改 import 路径即可，不复制也不影响任何功能。
+
+**Q: Node 版本要求？**
+推荐 **Node 22+**（默认开启 ESM 语法探测）。20.x 需加 `--experimental-detect-module` 标志。
+
+**Q: Python 脚本的依赖？**
+```bash
+pip install -r requirements.txt   # requests + curl_cffi
+```
+
+**Q: test_fp.html 必须起服务吗？**
+是的，它通过 import map 从 CDN 加载 `blueimp-md5`，`file://` 协议下模块加载会失败：
+`python -m http.server 8080` 后访问 `http://localhost:8080/test_fp.html`。
+
+**Q: 真实浏览器报告可以提交吗？**
+不要。`browser_fingerprint.json` 已加入 `.gitignore`——它含你设备的真实指纹。
 
 ## ⚠️ 免责声明
 

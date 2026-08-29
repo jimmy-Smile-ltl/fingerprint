@@ -1,6 +1,6 @@
 # fingerprint — Browser Fingerprint Collection & Node.js Environment Emulation
 
-[![Node](https://img.shields.io/badge/Node-20.10+-green.svg)](https://nodejs.org/)
+[![Node](https://img.shields.io/badge/Node-22+-green.svg)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![中文](https://img.shields.io/badge/README-%E4%B8%AD%E6%96%87-blue.svg)](README.md)
 
@@ -15,8 +15,10 @@ so headless code emits a fingerprint identical to your real browser.
 - [Features](#features)
 - [Structure](#structure)
 - [Quick Start](#quick-start)
+- [API Overview](#api-overview)
 - [Real-World Cases](#real-world-cases)
 - [How It Works](#how-it-works)
+- [FAQ](#faq)
 - [Disclaimer](#disclaimer)
 - [License](#license)
 
@@ -58,6 +60,8 @@ python -m http.server 8080
 # Save it as browser_fingerprint.json (gitignored — do not commit)
 ```
 
+![Collection page](docs/test_fp_screenshot.png)
+
 ### 2. Verify in Node.js
 
 ```bash
@@ -84,6 +88,39 @@ const result = await fp.getFingerprint();
 ```
 
 > 💡 See `cases/01_parity_demo/` for a complete runnable example.
+
+## API Overview
+
+### all_fp.js (fingerprint collection, ES module)
+
+| Category | Export | Description |
+|----------|--------|-------------|
+| Utils | `hashString` / `md5Hash` | String hash / MD5 |
+| Canvas | `getCanvasFingerprint()` | Basic canvas fingerprint (200x50) |
+| | `getCanvasFingerprintAdvanced()` | Advanced canvas fingerprint (280x60, with Farbling stability check) |
+| WebGL | `getWebGLContext()` | Get a WebGL context |
+| | `getWebGLFingerprint()` | GPU hardware params (vendor/renderer/limits/extensions) |
+| | `getAdvancedWebGLFingerprint()` | Shader-pixel-level fingerprint |
+| Audio | `getAudioFingerprint(timeoutMs)` | Audio-rendering waveform fingerprint (async) |
+| Fonts | `getFontFingerprint(testFonts?)` | Installed-font detection (16 candidates) |
+| Hardware | `getHardwareFingerprint()` | CPU cores / RAM / touch points / platform |
+| Timezone | `getTimezoneFingerprint()` | Timezone + offset + languages |
+| Detection | `detectCanvasFarbling()` | Canvas noise detection (Brave-style) |
+| | `detectWebGLInterception()` | GPU info interception detection |
+| | `detectUAReduction()` | UA reduction detection |
+| Aggregate | `BrowserFingerprinter` (class) | `.getComponents()` / `.getFingerprint()` (→ `{visitorId, components}`) / `.getShortFingerprint()` |
+| | `BrowserFP` | FingerprintJS-compatible: `.load()` / `.getVisitorId()` |
+
+### fp_env_patch.js (Node env patch, CommonJS)
+
+| Export | Description |
+|--------|-------------|
+| `setFingerprintConfig({...})` | Override any fingerprint config item |
+| `injectRealFingerprint(report)` | One-shot injection of a report collected by test_fp.html |
+| `applyPreset(name)` / `PRESETS` | Device presets: `windows-chrome` / `macos-chrome` / `linux-chrome` / `ios-safari` |
+| `FP_CONFIG` | Current config object (six dimensions + injection slots) |
+| `updateFunToString` / `setNativeTag` / `defProp` | Prototype-chain / toString camouflage helpers |
+| `Window` / `Navigator` / `Document` / `HTMLCanvasElement` / `WebGLRenderingContext` / `OfflineAudioContext` … | Environment constructors (for external extension) |
 
 ## Real-World Cases
 
@@ -138,6 +175,30 @@ Case overview:
 3. **Patch per dimension** — "real data first, synthetic fallback" for every dimension
 4. **toString camouflage** — hijack `Function.prototype.toString` to return `[native code]`
 5. **Verify** — browser vs Node comparison, dimension by dimension (`test_fp_node.js`)
+
+## FAQ
+
+**Q: I see a `MODULE_TYPELESS_PACKAGE_JSON` warning at startup. Is it harmful?**
+No. `all_fp.js` is an ES module but the repo's `package.json` deliberately declares no `"type"`
+(adding `"type": "module"` would break the CommonJS `fp_env_patch.js`), so Node detects the
+syntax automatically and prints a notice. To silence it, copy `all_fp.js` to `all_fp.mjs` and
+update the import paths — nothing else changes.
+
+**Q: Which Node version do I need?**
+**Node 22+** is recommended (ESM syntax detection enabled by default). On 20.x, add
+`--experimental-detect-module`.
+
+**Q: Python script dependencies?**
+```bash
+pip install -r requirements.txt   # requests + curl_cffi
+```
+
+**Q: Does test_fp.html require a local server?**
+Yes — it loads `blueimp-md5` from a CDN via an import map, which fails under `file://`:
+run `python -m http.server 8080` and open `http://localhost:8080/test_fp.html`.
+
+**Q: Can I commit my real browser report?**
+No. `browser_fingerprint.json` is gitignored — it contains your device's real fingerprint.
 
 ## Disclaimer
 
