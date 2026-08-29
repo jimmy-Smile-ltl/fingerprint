@@ -13,6 +13,7 @@
 | 5 | [`05_boss_zhipin`](05_boss_zhipin/) | BOSS 直聘 __zp_stoken__ 动态令牌 + Canvas 指纹 | 📖 文档 | ✅ 来源已标注 |
 | 6 | [`06_device_sdk`](06_device_sdk/) | 国内风控设备指纹 SDK 采集面（数美/顶象/极验） | 📖 文档 | ✅ 来源已标注 |
 | 7 | [`07_cloudflare`](07_cloudflare/) | Cloudflare TLS 指纹 + Turnstile 隐形验证 | 📖 文档 | ✅ 来源已标注 |
+| 8 | [`08_tls_fingerprint`](08_tls_fingerprint/) | TLS 指纹：requests 拿不到、curl_cffi 能拿到（北大信研院实战） | 🔧 可运行 | ✅ 实战记录 |
 
 > 📖 文档型 = 基于公开资料整理的机制分析与方法论文档，不含可运行代码；
 > 🔧 可运行 = 自带脚本，可直接执行。

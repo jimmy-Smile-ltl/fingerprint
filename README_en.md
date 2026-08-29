@@ -98,6 +98,7 @@ See [`cases/`](cases/README.md) — one directory per case, each with its own RE
 | 5 | `cases/05_boss_zhipin` | 📖 doc | BOSS Zhipin __zp_stoken__ dynamic token + Canvas fingerprint |
 | 6 | `cases/06_device_sdk` | 📖 doc | Chinese risk-control device-fingerprint SDKs (Shumei / Dingxiang / GeeTest) |
 | 7 | `cases/07_cloudflare` | 📖 doc | Cloudflare TLS fingerprinting + Turnstile invisible challenge |
+| 8 | `cases/08_tls_fingerprint` | 🔧 runnable | TLS fingerprinting: requests fails, curl_cffi works (real projects + comparison script) |
 
 ## How It Works
 
