@@ -4,7 +4,6 @@ __pycache__/
 
 # Node
 node_modules/
-package-lock.json
 
 # 测试产物（test_e2e_ruishu.py 的调试输出）
 *_output.txt
