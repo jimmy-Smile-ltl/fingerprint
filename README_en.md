@@ -87,12 +87,17 @@ const result = await fp.getFingerprint();
 
 ## Real-World Cases
 
-See [`cases/`](cases/README.md) — one directory per case, each with its own README and runnable scripts:
+See [`cases/`](cases/README.md) — one directory per case, each with its own README:
 
-| # | Case | Description |
-|---|------|-------------|
-| 1 | `cases/01_parity_demo` | Report injection → browser/Node parity verification (self-contained, no target site needed) |
-| 2 | `cases/02_ruishu_caict` | Ruishu WAF end-to-end research flow (412 → env patch → cookie → verification) |
+| # | Case | Type | Description |
+|---|------|------|-------------|
+| 1 | `cases/01_parity_demo` | 🔧 runnable | Report injection → browser/Node parity verification (self-contained) |
+| 2 | `cases/02_ruishu_caict` | 🔧 runnable | Ruishu WAF end-to-end research flow (412 → env patch → cookie → verification) |
+| 3 | `cases/03_akamai_bot_manager` | 📖 doc | Akamai sensor_data / _abck risk control + TLS fingerprinting |
+| 4 | `cases/04_jd_h5st` | 📖 doc | JD.com h5st dynamic signature (patched hash + bytecode VM + env fingerprint) |
+| 5 | `cases/05_boss_zhipin` | 📖 doc | BOSS Zhipin __zp_stoken__ dynamic token + Canvas fingerprint |
+| 6 | `cases/06_device_sdk` | 📖 doc | Chinese risk-control device-fingerprint SDKs (Shumei / Dingxiang / GeeTest) |
+| 7 | `cases/07_cloudflare` | 📖 doc | Cloudflare TLS fingerprinting + Turnstile invisible challenge |
 
 ## How It Works
 

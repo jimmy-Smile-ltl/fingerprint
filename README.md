@@ -87,12 +87,17 @@ const result = await fp.getFingerprint();
 
 ## 📚 实际案例
 
-见 [`cases/`](cases/README.md)，每个案例一个目录、自带 README 和可运行脚本：
+见 [`cases/`](cases/README.md)，每个案例一个目录、自带 README：
 
-| # | 案例 | 说明 |
-|---|------|------|
-| 1 | `cases/01_parity_demo` | 报告注入 → Node 输出与浏览器一致性验证（自包含，无需目标站点） |
-| 2 | `cases/02_ruishu_caict` | 瑞数 WAF 端到端研究流程（412 → 补环境 → cookie → 验证） |
+| # | 案例 | 类型 | 说明 |
+|---|------|------|------|
+| 1 | `cases/01_parity_demo` | 🔧 可运行 | 报告注入 → Node 输出与浏览器一致性验证（自包含，无需目标站点） |
+| 2 | `cases/02_ruishu_caict` | 🔧 可运行 | 瑞数 WAF 端到端研究流程（412 → 补环境 → cookie → 验证） |
+| 3 | `cases/03_akamai_bot_manager` | 📖 文档 | Akamai sensor_data / _abck 风控 + TLS 指纹 |
+| 4 | `cases/04_jd_h5st` | 📖 文档 | 京东 h5st 动态签名（魔改哈希 + 字节码 VM + 环境指纹） |
+| 5 | `cases/05_boss_zhipin` | 📖 文档 | BOSS 直聘 __zp_stoken__ 动态令牌 + Canvas 指纹 |
+| 6 | `cases/06_device_sdk` | 📖 文档 | 国内风控设备指纹 SDK 采集面（数美/顶象/极验） |
+| 7 | `cases/07_cloudflare` | 📖 文档 | Cloudflare TLS 指纹 + Turnstile 隐形验证 |
 
 ## 🧠 工作原理
 
