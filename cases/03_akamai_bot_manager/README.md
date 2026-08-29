@@ -1,5 +1,7 @@
 # 案例 3：Akamai Bot Manager — sensor_data 与 _abck 风控
 
+> 💡 一句话理解：Akamai 的难点不在加密，在于把浏览器环境压缩成 sensor_data 交给风控评分——环境不一致必被拒。
+
 > 📖 文档型案例（基于公开资料整理）。Akamai 是爬虫界公认的"硬骨头"，难点不在 JS 加密本身，而在风控维度。
 
 ## 背景

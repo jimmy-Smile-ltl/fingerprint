@@ -1,5 +1,7 @@
 # 案例 18：网易云音乐 weapi — 经典两段式加密接口
 
+> 💡 一句话理解：请求体 AES + 密钥 RSA 的两段式加密，纯算法可完全用 Python 复现——与补环境无关，是接口加密而非环境校验。
+
 > 📖 实战记录型案例。素材来自 `spider research/其他/pro27 网易云 参数加密`
 > （`netease_encrypt.py` + `test_api.py`）。weapi 是「接口加密」类反爬的教科书案例。
 

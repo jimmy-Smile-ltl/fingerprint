@@ -1,5 +1,7 @@
 # 案例 7：Cloudflare — TLS 指纹与 Turnstile 隐形验证
 
+> 💡 一句话理解：Cloudflare 是「TLS → 浏览器指纹 → 行为」三层递进的防线，Turnstile 是最后一道无感验证。
+
 > 📖 文档型案例（基于公开资料整理）。Cloudflare 是爬虫日常打交道最多的 403 来源，
 > 它的防线是多层的：TLS 指纹 → HTTP 特征 → 浏览器指纹 → 行为验证（Turnstile）。
 

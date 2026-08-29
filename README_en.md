@@ -87,7 +87,14 @@ const result = await fp.getFingerprint();
 
 ## Real-World Cases
 
-See [`cases/`](cases/README.md) — one directory per case, each with its own README:
+See [`cases/`](cases/README.md) — the case library is built to aid understanding, with:
+
+- **Layered defense model**: anti-bot as a six-layer tower (transport → challenge → environment → signature → behavior → compliance)
+- **Symptom lookup table**: hit a 403/412/405/521/signature param/captcha? Look up which case explains it
+- **Reading paths**: beginner path / fingerprint mainline / WAF mainline / signature mainline / behavior & compliance
+- **Glossary**: JA3, JSVMP, env patching, pure algorithm, patched hashes, risk-score linkage, and more
+
+Case overview:
 
 | # | Case | Type | Description |
 |---|------|------|-------------|

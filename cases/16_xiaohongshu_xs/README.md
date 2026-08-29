@@ -1,5 +1,7 @@
 # 案例 16：小红书 x-s / shield — 内容平台签名族
 
+> 💡 一句话理解：x-s 不是单个参数而是「签名族」（x-s/x-s-common/x-t…），Web 端跑在 JSVMP 上、App 端在 native so 里——只逆一个参数还是会挂。
+
 > 📖 文档型案例（基于公开资料整理）。小红书的防护不是单个参数，而是
 > **x-s / x-s-common / x-t / shield 的签名族**，且 Web 端与 App 端是两套体系。
 
