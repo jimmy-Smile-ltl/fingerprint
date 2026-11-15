@@ -185,6 +185,7 @@
     grid-column: 2; font-family: var(--mono); font-size: 11px; line-height: 1.4;
     color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  .fp-nav-item.has-alert .fp-nav-summary { color: var(--bad); font-weight: 700; }
 
   .fp-detail { min-width: 0; background: var(--paper-2); border: 1px solid var(--rule); }
   .detail-bar { height: 3px; background: var(--rule-2); }
@@ -216,6 +217,9 @@
     background: rgba(138,90,0,.06); border-left: 2px solid var(--warn);
     padding: 8px 12px; margin: 0 0 14px;
   }
+  .detail-note.is-alert {
+    color: var(--bad); background: rgba(166,43,31,.06); border-left-color: var(--bad);
+  }
   .detail-rows { margin: 0; border-top: 1px solid var(--rule); }
   .detail-rows.two-col { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); column-gap: 30px; }
   .drow {
@@ -231,6 +235,13 @@
   .drow dd.ok   { color: var(--ok); }
   .drow dd.bad  { color: var(--bad); }
   .drow dd.hl   { color: var(--accent-ink); }
+  .drow .expected {
+    display: block; margin-top: 2px; font-family: var(--mono); font-size: 10px;
+    letter-spacing: .02em; color: var(--ink-3);
+  }
+  .drow.is-bad { background: rgba(166,43,31,.055); box-shadow: inset 2px 0 0 var(--bad); }
+  .drow.is-bad dt, .drow.is-bad .expected { color: var(--bad); }
+  .drow.is-bad dd { font-weight: 700; }
 
   .detail-columns { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 22px; align-items: start; }
   .ext-box { border: 1px solid var(--rule); background: var(--paper); min-width: 0; }
@@ -688,7 +699,7 @@
           <h3>行为 / 设备 / 自动化</h3>
           <ul>
             <li>鼠标轨迹、速度、点击/键击 · 本页行为采样</li>
-            <li>webdriver / CDP / Headless · 本页自动化检测</li>
+            <li>webdriver / CDP / Headless · 预期值 + 红色告警</li>
             <li>滑块轨迹 · 案例 09</li>
             <li>数美 / 顶象 / 极验设备 SDK · 案例 06</li>
             <li>App 侧 native 签名与设备信息 · 案例 16</li>
@@ -1366,7 +1377,10 @@ window.probeTls = async function() {
 
 function rowHtml(row) {
   const cls = row.w ? 'warn' : row.g ? 'ok' : row.b ? 'bad' : row.h ? 'hl' : '';
-  return `<div class="drow"><dt>${escapeHtml(row.k)}</dt><dd class="${cls}">${escapeHtml(row.v)}</dd></div>`;
+  const expected = row.expected
+    ? `<span class="expected">预期: ${escapeHtml(row.expected)}</span>`
+    : '';
+  return `<div class="drow ${row.b ? 'is-bad' : ''}"><dt>${escapeHtml(row.k)}${expected}</dt><dd class="${cls}">${escapeHtml(row.v)}</dd></div>`;
 }
 
 function detailHtml(dim, index, total) {
@@ -1383,7 +1397,7 @@ function detailHtml(dim, index, total) {
       </div>
       <h3>${escapeHtml(dim.label)}</h3>
       <p class="principle"><span class="principle-label">原理</span>${escapeHtml(dim.principle)}</p>
-      ${dim.note ? `<p class="detail-note">${escapeHtml(dim.note)}</p>` : ''}
+      ${dim.note ? `<p class="detail-note ${dim.alert ? 'is-alert' : ''}">${escapeHtml(dim.note)}</p>` : ''}
       ${body}
       ${dim.extra || ''}
     </div>`;
@@ -1417,7 +1431,7 @@ function renderDims(dims, activeId) {
     group.items.push(dim);
   });
   const itemHtml = function(dim) {
-    return `<button type="button" class="fp-nav-item" data-id="${escapeHtml(dim.id)}" onclick="showDim('${escapeHtml(dim.id)}')">
+    return `<button type="button" class="fp-nav-item ${dim.alert ? 'has-alert' : ''}" data-id="${escapeHtml(dim.id)}" onclick="showDim('${escapeHtml(dim.id)}')">
       <span class="fp-nav-swatch ${dim.cat}" aria-hidden="true"></span>
       <span class="fp-nav-label">${escapeHtml(dim.label)}</span>
       <span class="fp-nav-summary">${escapeHtml(dim.summary || '')}</span>
@@ -1464,9 +1478,13 @@ function makeWebglDim(c) {
   const extensions = params.extensions ? params.extensions.split(',') : [];
   const advanced = c.webglAdvanced == null ? null : String(c.webglAdvanced);
   const allZero = advanced && advanced.replace(/\s/g, '') === '0,0,0,0';
+  const rendererText = params.unmaskedRenderer || params.renderer || '';
+  const software = /SwiftShader|llvmpipe|Software|Basic Render/i.test(rendererText);
   let note = '';
   if (!basic) {
     note = '当前环境未返回 WebGL 上下文：浏览器可能禁用了 WebGL、没有可用 GPU，或被反指纹扩展拦截。';
+  } else if (software) {
+    note = '检测到软件渲染（SwiftShader / llvmpipe），常见于无头浏览器、禁用 GPU 的自动化环境或远程桌面。';
   } else if (advanced == null) {
     note = 'WebGL 上下文可用，但没有返回着色器像素；可能被驱动或扩展限制。';
   } else if (allZero) {
@@ -1474,14 +1492,16 @@ function makeWebglDim(c) {
   }
   return {
     id: 'webgl', group: '核心指纹', label: 'WebGL', tag: 'WebGL', cat: 'webgl',
-    summary: params.unmaskedVendor || params.vendor || (basic ? 'WebGL 可用' : '不可用'),
+    alert: software,
+    summary: software ? '软件渲染' : (params.unmaskedVendor || params.vendor || (basic ? 'WebGL 可用' : '不可用')),
     principle: 'GPU 型号、驱动版本与着色器浮点精度不同；getParameter 暴露硬件上限，readPixels 读回的像素也略有差异。',
     note: note,
     rows: [
       {k:'Vendor', v:params.vendor || '—'},
       {k:'Renderer', v:params.renderer || '—'},
-      {k:'Unmasked Vendor', v:params.unmaskedVendor || '—', h:!!params.unmaskedVendor},
-      {k:'Unmasked Renderer', v:params.unmaskedRenderer || '—', h:!!params.unmaskedRenderer},
+      {k:'Unmasked Vendor', v:params.unmaskedVendor || '—', expected:'可读', b:!params.unmaskedVendor, h:!!params.unmaskedVendor},
+      {k:'Unmasked Renderer', v:params.unmaskedRenderer || '—', expected:'可读', b:!params.unmaskedRenderer, h:!!params.unmaskedRenderer},
+      {k:'软件渲染', v:basic ? (software ? '是（无头/禁用 GPU 常见）' : '否') : '—', expected:'否', b:!!basic && software, g:!!basic && !software},
       {k:'Version', v:params.version || '—'},
       {k:'GLSL 版本', v:params.shadingLangVersion || '—'},
       {k:'最大纹理', v:params.maxTextureSize || '—'},
@@ -1590,18 +1610,22 @@ function makeDetectDim(c) {
   const fb = c.farblingDetected;
   const wi = c.webglInterception || {};
   const ua = c.uaReduction || {};
+  const issues = [fb, !wi.webglAvailable, wi.debugInfoBlocked,
+    !wi.unmaskedVendor, !wi.unmaskedRenderer].filter(Boolean).length;
   return {
     id: 'detect', group: '对抗与行为', label: '反指纹检测', tag: 'Detect', cat: 'detect',
-    summary: (fb ? 'Farbling' : '无噪声') + ' · ' + (wi.debugInfoBlocked ? '拦截' : '可读'),
-    principle: '检测浏览器是否启用 Farbling 噪声、WebGL 调试信息拦截与 UA 精简；这些特征本身也会进入风控打分。',
+    alert: issues > 0,
+    summary: issues ? (issues + ' 项异常') : '符合预期',
+    principle: '检测浏览器是否启用 Farbling 噪声、WebGL 调试信息拦截与 UA 精简；红色行表示与预期值不符，这些特征会影响指纹稳定性或风控评分。',
+    note: issues ? '红色高亮 = 与预期值不符；Farbling / WebGL 拦截可能来自隐私浏览器或反指纹扩展。' : '',
     two: true,
     rows: [
-      {k:'Canvas Farbling', v:fb ? '已启用（Brave / Firefox RFP）' : '未检测到', w:!!fb, g:!fb},
-      {k:'WebGL 是否可用', v:wi.webglAvailable ? '是' : '否', g:!!wi.webglAvailable, b:!wi.webglAvailable},
-      {k:'Debug 信息拦截', v:wi.debugInfoBlocked ? '是（GPU 信息被隐藏）' : '否（可读真实 GPU）', w:!!wi.debugInfoBlocked, g:!wi.debugInfoBlocked},
-      {k:'真实 GPU 厂商', v:wi.unmaskedVendor || '已拦截', w:!wi.unmaskedVendor, h:!!wi.unmaskedVendor},
-      {k:'真实 GPU 型号', v:wi.unmaskedRenderer || '已拦截', w:!wi.unmaskedRenderer, h:!!wi.unmaskedRenderer},
-      {k:'UA 精简', v:ua.isReduced ? '已启用（版本号被固定）' : '完整 UA', w:!!ua.isReduced, g:!ua.isReduced},
+      {k:'Canvas Farbling', v:fb ? '已启用（Brave / Firefox RFP）' : '未检测到', expected:'未检测到', b:!!fb, g:!fb},
+      {k:'WebGL 是否可用', v:wi.webglAvailable ? '是' : '否', expected:'是', g:!!wi.webglAvailable, b:!wi.webglAvailable},
+      {k:'Debug 信息拦截', v:wi.debugInfoBlocked ? '是（GPU 信息被隐藏）' : '否（可读真实 GPU）', expected:'否（可读真实 GPU）', b:!!wi.debugInfoBlocked, g:!wi.debugInfoBlocked},
+      {k:'真实 GPU 厂商', v:wi.unmaskedVendor || '已拦截', expected:'可读', b:!wi.unmaskedVendor, h:!!wi.unmaskedVendor},
+      {k:'真实 GPU 型号', v:wi.unmaskedRenderer || '已拦截', expected:'可读', b:!wi.unmaskedRenderer, h:!!wi.unmaskedRenderer},
+      {k:'UA 精简', v:ua.isReduced ? '已启用（版本号被固定）' : '完整 UA', expected:'浏览器版本决定'},
       {k:'Chrome 主版本', v:ua.chromeVersion || '—'}
     ]
   };
@@ -1851,23 +1875,28 @@ function makeSupplementalDims(s) {
   });
 
   // Automation
+  const a = (s.automation && s.automation.available) ? s.automation : null;
+  const automationIssues = a ? (a.issueCount || 0) : 0;
   dims.push({
     id: 'automation', group: '对抗与行为', label: '自动化检测', tag: 'Auto', cat: 'detect',
-    summary: s.automation && s.automation.available ? ('webdriver: ' + yesNo(s.automation.webdriver)) : '不可用',
-    principle: 'webdriver 标记、CDP/Selenium 注入痕迹、Headless UA、插件与焦点状态是常见的自动化环境线索。',
+    alert: automationIssues > 0,
+    summary: a ? (automationIssues ? (automationIssues + ' 项异常') : '符合预期') : '不可用',
+    principle: 'webdriver 标记、CDP/Selenium 注入痕迹、Headless UA、软件渲染、插件与窗口特征都是常见的自动化环境线索；红色行 = 与预期值不符。',
+    note: a && automationIssues ? '红色高亮 = 与预期值不符。WebDriver、Headless UA、注入标记和软件渲染是最强信号；开发工具/自动化测试环境出现告警是预期的。' : '',
     two: true,
-    rows: s.automation && s.automation.available ? [
-      {k:'navigator.webdriver', v:yesNo(s.automation.webdriver), w:s.automation.webdriver, g:!s.automation.webdriver},
-      {k:'Headless UA', v:yesNo(s.automation.headlessUA), w:s.automation.headlessUA},
-      {k:'window.chrome', v:yesNo(s.automation.chromeObject)},
-      {k:'插件数量', v:s.automation.pluginCount == null ? '—' : s.automation.pluginCount},
-      {k:'语言数量', v:s.automation.languageCount == null ? '—' : s.automation.languageCount},
-      {k:'通知权限', v:s.automation.notificationPermission},
-      {k:'窗口尺寸', v:s.automation.windowSize},
-      {k:'页面焦点', v:s.automation.hasFocus == null ? '—' : yesNo(s.automation.hasFocus)},
-      {k:'注入标记', v:(s.automation.markers || []).join(', ') || '未发现'},
-      {k:'CDC 标记', v:(s.automation.cdcMarkers || []).join(', ') || '未发现'}
-    ] : [{k:'状态', v:'不可用', w:1}]
+    rows: a ? [
+      {k:'navigator.webdriver', v:yesNo(a.webdriver), expected:'false', b:a.webdriver, g:!a.webdriver},
+      {k:'Headless UA', v:yesNo(a.headlessUA), expected:'false', b:a.headlessUA, g:!a.headlessUA},
+      {k:'window.chrome', v:yesNo(a.chromeObject), expected:a.chromium ? '存在（Chrome/Edge）' : '不适用（非 Chromium）', b:a.chromium && !a.chromeObject, g:!a.chromium || a.chromeObject},
+      {k:'插件数量', v:a.pluginCount == null ? '—' : a.pluginCount, expected:a.chromium ? '≥1（Chrome）' : '不适用', b:a.chromium && a.pluginCount === 0, g:!a.chromium || a.pluginCount > 0},
+      {k:'语言数量', v:a.languageCount == null ? '—' : a.languageCount, expected:'≥1', b:!a.languageCount, g:!!a.languageCount},
+      {k:'通知权限', v:a.notificationPermission, expected:'任意状态'},
+      {k:'窗口尺寸', v:a.windowSize, expected:'outer ≥ inner', b:a.sizeAnomaly, g:!a.sizeAnomaly},
+      {k:'页面焦点', v:a.hasFocus == null ? '—' : yesNo(a.hasFocus), expected:'页面可见时为是', w:a.hasFocus === false && document.visibilityState === 'visible'},
+      {k:'WebGL 渲染器', v:a.webglRenderer || '—', expected:'非软件渲染', b:!!a.softwareRenderer, g:a.softwareRenderer === false},
+      {k:'注入标记', v:(a.markers || []).join(', ') || '未发现', expected:'未发现', b:(a.markers || []).length > 0, g:(a.markers || []).length === 0},
+      {k:'CDC 标记', v:(a.cdcMarkers || []).join(', ') || '未发现', expected:'未发现', b:(a.cdcMarkers || []).length > 0, g:(a.cdcMarkers || []).length === 0}
+    ] : [{k:'状态', v:'不可用', expected:'可用', b:1}]
   });
 
   return dims;

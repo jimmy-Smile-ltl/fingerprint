@@ -452,18 +452,61 @@ function collectAutomation() {
   ];
   const found = markers.filter((key) => key in window);
   const cdc = Object.keys(document).filter((key) => key.startsWith('$cdc_') || key.startsWith('cdc_'));
+  const ua = navigator.userAgent || '';
+  const chromium = /Chrome\//.test(ua) || /Edg\//.test(ua);
+  const webdriver = navigator.webdriver === true;
+  const headlessUA = /HeadlessChrome/i.test(ua);
+  const chromeObject = !!window.chrome;
+  const pluginCount = navigator.plugins ? navigator.plugins.length : null;
+  const languageCount = Array.isArray(navigator.languages) ? navigator.languages.length : null;
+  const sizeAnomaly = !(window.outerWidth > 0 && window.innerWidth > 0 && window.outerWidth >= window.innerWidth);
+  let webglRenderer = null;
+  let softwareRenderer = null;
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl');
+    if (gl) {
+      const debug = gl.getExtension('WEBGL_debug_renderer_info');
+      webglRenderer = debug
+        ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL)
+        : gl.getParameter(gl.RENDERER);
+      softwareRenderer = /SwiftShader|llvmpipe|Software|Basic Render/i.test(webglRenderer || '');
+    }
+  } catch (error) { /* ignore */ }
+
+  const issues = [];
+  if (webdriver) issues.push('navigator.webdriver=true');
+  if (headlessUA) issues.push('Headless UA');
+  if (found.length) issues.push('注入标记');
+  if (cdc.length) issues.push('CDC 标记');
+  if (softwareRenderer) issues.push('软件渲染');
+  if (chromium && !chromeObject) issues.push('缺少 window.chrome');
+  if (chromium && pluginCount === 0) issues.push('插件数量为 0');
+  if (!languageCount) issues.push('语言列表为空');
+  if (sizeAnomaly) issues.push('窗口尺寸异常');
+
   return {
     available: true,
-    webdriver: navigator.webdriver === true,
-    headlessUA: /HeadlessChrome/i.test(navigator.userAgent),
-    chromeObject: !!window.chrome,
-    pluginCount: navigator.plugins ? navigator.plugins.length : null,
-    languageCount: Array.isArray(navigator.languages) ? navigator.languages.length : null,
+    webdriver,
+    headlessUA,
+    chromium,
+    chromeObject,
+    pluginCount,
+    languageCount,
     notificationPermission: typeof Notification !== 'undefined' ? Notification.permission : 'N/A',
     markers: found,
     cdcMarkers: cdc.slice(0, 5),
     windowSize: `${window.outerWidth}×${window.outerHeight} / ${window.innerWidth}×${window.innerHeight}`,
-    hasFocus: document.hasFocus ? document.hasFocus() : null
+    outerWidth: window.outerWidth,
+    outerHeight: window.outerHeight,
+    innerWidth: window.innerWidth,
+    innerHeight: window.innerHeight,
+    sizeAnomaly,
+    webglRenderer,
+    softwareRenderer,
+    hasFocus: document.hasFocus ? document.hasFocus() : null,
+    issues,
+    issueCount: issues.length
   };
 }
 

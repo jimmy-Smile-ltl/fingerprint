@@ -220,6 +220,10 @@ Results are grouped in the UI. Supplemental signals are deliberately **not** par
 | Adversarial | Farbling / WebGL interception / UA reduction, automation markers (webdriver/CDP/Headless) |
 | Behavior | local-only pointer path length, average/peak speed, clicks, keys, touches, scrolls |
 
+Detection dimensions (automation, anti-fingerprinting, WebGL software rendering) annotate an
+**expected value** on every row; a mismatch highlights the row in red and the left nav summarizes
+the number of anomalies.
+
 Boundaries (different collection points, not missing features):
 
 - **TLS / JA3 / JA4**: handshake signals — recorded by the Workers `/api/tls` endpoint or the local

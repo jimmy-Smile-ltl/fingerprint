@@ -229,6 +229,8 @@ const result = await fp.getFingerprint();
 | 对抗与行为 | 反指纹检测 / 自动化检测 | Farbling、WebGL 拦截、UA 精简；webdriver、CDP 标记、Headless UA |
 | 对抗与行为 | 行为采样 | 指针轨迹长度、平均/峰值速度、点击、按键、触摸、滚动（仅本地统计） |
 
+检测类维度（自动化检测、反指纹检测、WebGL 软件渲染）会为每行标注**预期值**；实际值与预期不符时整行红色高亮，左侧导航同时汇总异常数量。
+
 ### 边界（不是“遗漏”，是采集位置不同）
 
 - **TLS / JA3 / JA4**：握手阶段信号，由 Workers 边缘 API 或本地 ClientHello 工具记录，不在浏览器环境层
