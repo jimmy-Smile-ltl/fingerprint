@@ -2,10 +2,13 @@
 
 [![Node](https://img.shields.io/badge/Node-22+-green.svg)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-online-blue.svg)](https://fingerprint.jimmysmileltl.workers.dev/)
 [![English](https://img.shields.io/badge/README-English-blue.svg)](README_en.md)
 
 完整复现 **Canvas / WebGL / Audio / 字体 / 硬件 / 时区** 六大浏览器指纹维度，覆盖
 「浏览器采集 → Node.js 补环境 → 真实数据注入 → 指纹一致性验证」全流程。
+
+**在线体验**：<https://fingerprint.jimmysmileltl.workers.dev/>
 
 既可以在真实浏览器中一键采集自己的设备指纹，也可以在 Node.js 中把这份报告注入补环境，
 让无头环境输出与真实浏览器完全一致的指纹。
@@ -236,6 +239,8 @@ curl -k https://127.0.0.1:8443
 - [Salesforce JA3 规范与实现](https://github.com/salesforce/ja3)
 
 ## ☁️ 部署在线体验（Cloudflare）
+
+当前线上示例：<https://fingerprint.jimmysmileltl.workers.dev/>（Cloudflare Workers）。
 
 采集页是纯静态页面，`vendor/blueimp-md5` 已本地化，不依赖运行时 CDN。
 

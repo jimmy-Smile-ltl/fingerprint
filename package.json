@@ -2,6 +2,7 @@
   "name": "fingerprint",
   "version": "1.0.0",
   "description": "Browser fingerprint collection & Node.js environment emulation toolkit — Canvas / WebGL / Audio / Fonts / Hardware / Timezone",
+  "homepage": "https://fingerprint.jimmysmileltl.workers.dev/",
   "main": "all_fp.js",
   "scripts": {
     "test": "node test_fp_node.js",

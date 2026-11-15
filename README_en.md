@@ -2,10 +2,13 @@
 
 [![Node](https://img.shields.io/badge/Node-22+-green.svg)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-online-blue.svg)](https://fingerprint.jimmysmileltl.workers.dev/)
 [![中文](https://img.shields.io/badge/README-%E4%B8%AD%E6%96%87-blue.svg)](README.md)
 
 A toolkit that fully reproduces the six major browser fingerprint dimensions — **Canvas / WebGL / Audio / Fonts / Hardware / Timezone** —
 covering the complete pipeline: *browser collection → Node.js environment patch → real data injection → parity verification*.
+
+**Live demo**: <https://fingerprint.jimmysmileltl.workers.dev/>
 
 Collect your real device fingerprint in a browser with one click, then inject that report into the Node.js environment
 so headless code emits a fingerprint identical to your real browser.
@@ -220,6 +223,8 @@ References:
 - [Salesforce JA3 specification](https://github.com/salesforce/ja3)
 
 ## Deploy the demo (Cloudflare)
+
+Live demo: <https://fingerprint.jimmysmileltl.workers.dev/> (Cloudflare Workers).
 
 The demo is fully static; `vendor/blueimp-md5` is vendored, so there is no runtime CDN dependency.
 
