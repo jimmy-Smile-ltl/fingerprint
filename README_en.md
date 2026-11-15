@@ -222,8 +222,10 @@ Results are grouped in the UI. Supplemental signals are deliberately **not** par
 | Behavior | local-only pointer path length, average/peak speed, clicks, keys, touches, scrolls |
 
 Detection dimensions (automation, anti-fingerprinting, consistency, WebGL software rendering)
-annotate an **expected value** on every row; a strong mismatch highlights the row in red and the
-left nav summarizes the number of anomalies. Optional API/capability gaps use amber warnings.
+annotate an **expected value** on every row. Only strong signals (WebDriver, headless UA,
+injected/CDC markers, Farbling) highlight a row in red and count toward the nav's anomaly total.
+Browser capability, privacy, zoom/fullscreen and mobile differences — unreadable Unmasked GPU
+info, software rendering, `outer < inner` window sizes — are amber hints, not automation evidence.
 
 **Battery fingerprint**: the Battery Status API exposes level, charging state and charge/discharge
 times, which sites commonly use as an environment signal. Levels outside 0–100%, negative or NaN

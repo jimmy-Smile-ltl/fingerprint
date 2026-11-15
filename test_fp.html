@@ -157,7 +157,15 @@
   }
   .fp-nav {
     border-top: 1.5px solid var(--ink); position: sticky; top: 18px; min-width: 0;
-    max-height: calc(100vh - 36px); overflow-y: auto; scrollbar-width: thin;
+    max-height: min(calc(100vh - 36px), 600px); overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: var(--rule-2) var(--rule-faint);
+  }
+  .fp-nav::-webkit-scrollbar { width: 7px; }
+  .fp-nav::-webkit-scrollbar-track { background: var(--rule-faint); }
+  .fp-nav::-webkit-scrollbar-thumb { background: var(--rule-2); border-radius: 999px; }
+  .fp-nav.is-scrollable:not(.at-end) {
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
   }
   .fp-nav-head {
     display: flex; justify-content: space-between; gap: 8px;
@@ -166,7 +174,7 @@
   }
   .fp-nav-hint { color: var(--rule-2); }
   .fp-nav-group-title {
-    padding: 10px 9px 4px; font-family: var(--mono); font-size: 10px;
+    padding: 10px 9px 4px; font-family: var(--mono); font-size: 11px;
     letter-spacing: .08em; color: var(--ink-3);
     border-bottom: 1px solid var(--rule-faint); background: var(--paper);
   }
@@ -188,7 +196,7 @@
   .fp-nav-swatch.behavior { background: var(--warn); }
   .fp-nav-label { font-size: 13px; font-weight: 700; color: var(--ink); }
   .fp-nav-summary {
-    grid-column: 2; font-family: var(--mono); font-size: 11px; line-height: 1.4;
+    grid-column: 2; font-family: var(--mono); font-size: 11.5px; line-height: 1.4;
     color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .fp-nav-item.has-alert .fp-nav-summary { color: var(--bad); font-weight: 700; }
@@ -216,7 +224,7 @@
   }
   .principle-label {
     flex: 0 0 auto; margin-top: 1px;
-    font-family: var(--mono); font-size: 10px; letter-spacing: .08em;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .08em;
     color: var(--ink-3); border: 1px solid var(--rule); padding: 1px 5px; line-height: 1.5;
   }
   .principle-body { min-width: 0; }
@@ -224,13 +232,13 @@
   .principle-body p + p { margin-top: 6px; }
   .principle-details { margin-top: 8px; padding-top: 7px; border-top: 1px dashed var(--rule); }
   .principle-details-title {
-    margin-bottom: 3px; font-family: var(--mono); font-size: 10px;
+    margin-bottom: 3px; font-family: var(--mono); font-size: 11px;
     letter-spacing: .06em; color: var(--ink-3);
   }
   .principle-details ul { list-style: none; padding: 0; margin: 0; }
   .principle-details li {
     position: relative; padding-left: 11px; margin-bottom: 3px;
-    font-size: 12px; line-height: 1.6; color: var(--ink-3);
+    font-size: 12.5px; line-height: 1.6; color: var(--ink-3);
   }
   .principle-details li::before { content: ""; position: absolute; left: 0; top: .68em; width: 4px; height: 4px; background: var(--rule-2); }
   .detail-note {
@@ -257,7 +265,7 @@
   .drow dd.bad  { color: var(--bad); }
   .drow dd.hl   { color: var(--accent-ink); }
   .drow .expected {
-    display: block; margin-top: 2px; font-family: var(--mono); font-size: 10px;
+    display: block; margin-top: 2px; font-family: var(--mono); font-size: 11px;
     letter-spacing: .02em; color: var(--ink-3);
   }
   .drow.is-bad { background: rgba(166,43,31,.055); box-shadow: inset 2px 0 0 var(--bad); }
@@ -341,17 +349,17 @@
   .layer-row.is-current { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
   .layer-id { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
   .layer-name { font-weight: 700; color: var(--ink); }
-  .layer-desc { color: var(--ink-2); font-family: var(--mono); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .layer-desc { color: var(--ink-2); font-family: var(--mono); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .layer-flag {
-    font-family: var(--mono); font-size: 10px; line-height: 1.5; letter-spacing: .03em;
+    font-family: var(--mono); font-size: 10.5px; line-height: 1.5; letter-spacing: .03em;
     padding: 2px 7px; border: 1px solid currentColor; white-space: nowrap;
   }
   .flag-page { color: var(--accent-ink); }
   .flag-js   { color: var(--ink-3); }
   .flag-case { color: var(--violet); }
 
-  .coverage-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; align-items: start; }
-  .cov-card { background: var(--paper-2); border: 1px solid var(--rule); padding: 14px 16px; }
+  .coverage-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; align-items: stretch; }
+  .cov-card { background: var(--paper-2); border: 1px solid var(--rule); padding: 14px 16px; display: flex; flex-direction: column; }
   .cov-card h3 { font-size: 14px; font-weight: 700; margin: 0 0 8px; }
   .cov-card ul { list-style: none; padding: 0; margin: 0; }
   .cov-card li {
@@ -359,7 +367,7 @@
     font-size: 12.5px; line-height: 1.6; color: var(--ink-2);
   }
   .cov-card li::before { content: ""; position: absolute; left: 0; top: .68em; width: 4px; height: 4px; background: var(--rule-2); }
-  .cov-links { margin-top: 10px; font-size: 11.5px; }
+  .cov-links { margin-top: auto; padding-top: 10px; font-size: 11.5px; }
   .cov-links a { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 2px; margin-right: 10px; }
   .coverage-callout {
     margin-top: 16px; padding: 14px 16px; background: rgba(31,63,209,.05);
@@ -380,7 +388,7 @@
     margin-top: 14px; padding: 10px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
     font-size: 12px;
   }
-  .case-paths-title { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); letter-spacing: .06em; }
+  .case-paths-title { font-family: var(--mono); font-size: 11px; color: var(--ink-3); letter-spacing: .06em; }
   .case-paths a { color: var(--accent-ink); text-decoration: none; }
   .case-paths a:hover { text-decoration: underline; }
   .case-group { margin-top: 26px; scroll-margin-top: 24px; }
@@ -392,7 +400,7 @@
   .case-group-head > span:last-child { margin-left: auto; font-size: 12px; color: var(--ink-3); }
   .case-layer {
     display: inline-block; padding: 1px 6px; border: 1px solid currentColor;
-    font-family: var(--mono); font-size: 10px; line-height: 1.6; letter-spacing: .03em; white-space: nowrap;
+    font-family: var(--mono); font-size: 10.5px; line-height: 1.6; letter-spacing: .03em; white-space: nowrap;
   }
   .case-layer.l1 { color: var(--ink-2); }
   .case-layer.l2 { color: var(--accent-ink); }
@@ -409,36 +417,50 @@
   .case-card ul { list-style: none; padding: 0; margin: 0; }
   .case-card li {
     position: relative; padding-left: 12px; margin-bottom: 4px;
-    font-size: 12px; line-height: 1.65; color: var(--ink-3);
+    font-size: 12.5px; line-height: 1.65; color: var(--ink-3);
   }
   .case-card li::before { content: ""; position: absolute; left: 0; top: .68em; width: 4px; height: 4px; background: var(--rule-2); }
   .case-card li b { color: var(--ink); font-weight: 700; }
-  .case-card code { font-family: var(--mono); font-size: 11.5px; background: var(--accent-soft); color: var(--accent-ink); padding: 0 4px; border-radius: 2px; }
+  .case-card code { font-family: var(--mono); font-size: 12px; background: var(--accent-soft); color: var(--accent-ink); padding: 0 4px; border-radius: 2px; }
   .case-side { background: var(--paper); border: 1px solid var(--rule); padding: 14px 16px; min-width: 0; }
   .case-side h4 { margin-bottom: 8px; font-size: 13px; font-weight: 700; }
   .case-side ul { list-style: none; padding: 0; margin: 0; }
-  .case-side li { position: relative; padding-left: 12px; margin-bottom: 5px; font-size: 12px; line-height: 1.65; color: var(--ink-3); }
+  .case-side li { position: relative; padding-left: 12px; margin-bottom: 5px; font-size: 12.5px; line-height: 1.65; color: var(--ink-3); }
   .case-side li::before { content: ""; position: absolute; left: 0; top: .68em; width: 4px; height: 4px; background: var(--rule-2); }
   .case-link { display: inline-block; margin-top: 8px; font-size: 11.5px; color: var(--accent-ink); text-decoration: underline; text-underline-offset: 2px; }
   .cases-footnote { margin-top: 18px; font-size: 12px; line-height: 1.7; color: var(--ink-3); }
 
   /* ===== TLS / JA3 ===== */
-  .tls-layout { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; align-items: start; }
+  .tls-layout { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; align-items: stretch; }
+  .tls-layout.is-live { align-items: start; }
   .tls-panel { background: var(--paper-2); border: 1px solid var(--rule); padding: 16px 18px; min-width: 0; }
   .tls-span { grid-column: 1 / -1; }
-  .tls-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; color: var(--ink-3); margin-bottom: 6px; }
+  .tls-kicker { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--ink-3); margin-bottom: 6px; }
   .tls-panel h2 { font-family: var(--display); font-size: clamp(24px, 2.6vw, 30px); line-height: 1.2; font-weight: 600; margin: 0 0 8px; }
   .tls-panel h3 { font-size: 16px; font-weight: 700; margin: 0 0 8px; }
   .tls-panel p { font-size: 13px; line-height: 1.7; color: var(--ink-2); margin-bottom: 10px; }
   .tls-actions { margin: 12px 0; }
-  .tls-result { border-top: 1px solid var(--rule); padding-top: 10px; font-family: var(--mono); font-size: 12px; color: var(--ink-2); word-break: break-all; }
+  .tls-result { border-top: 1px solid var(--rule); padding-top: 10px; font-family: var(--mono); font-size: 12px; color: var(--ink-2); word-break: normal; }
   .tls-result .drow { grid-template-columns: 140px minmax(0,1fr); }
+  .tls-result .drow dd { word-break: break-all; }
+  .tls-result .tls-hint, .tls-result .tls-fallback { overflow-wrap: break-word; }
   .tls-code {
     background: var(--ink); color: #e9ebdf; padding: 12px 14px; margin: 8px 0 10px;
-    font-family: var(--mono); font-size: 11.5px; line-height: 1.6;
+    font-family: var(--mono); font-size: 12px; line-height: 1.6;
     overflow-x: auto; white-space: pre;
   }
-  .tls-hint, .tls-note { font-size: 12px; line-height: 1.7; color: var(--ink-3); }
+  .tls-expect {
+    display: flex; gap: 8px; align-items: baseline; margin-top: 12px; padding-top: 10px;
+    border-top: 1px solid var(--rule); font-family: var(--mono); font-size: 12px;
+    line-height: 1.6; color: var(--ink-2);
+  }
+  .tls-expect-label {
+    flex: 0 0 auto; font-size: 10.5px; letter-spacing: .06em; color: var(--ink-3);
+  }
+  .tls-span .detail-rows { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); column-gap: 30px; }
+  .tls-span .drow { grid-template-columns: 112px minmax(0,1fr); gap: 12px; }
+  .tls-span .drow dd { text-align: left; font-family: var(--sans); font-size: 12.5px; word-break: normal; overflow-wrap: anywhere; }
+  .tls-hint, .tls-note { font-size: 12.5px; line-height: 1.7; color: var(--ink-3); }
   .tls-hint a { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 2px; }
   .tls-note {
     margin-top: 10px; padding: 9px 12px; background: rgba(138,90,0,.06);
@@ -492,6 +514,13 @@
   .guide pre code { background: none; color: inherit; padding: 0; font-size: 12.5px; }
   .table-wrap { overflow-x: auto; margin: 14px 0 20px; border-top: 1.5px solid var(--ink); }
   .guide table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px; }
+  #guide-map + .table-wrap table { min-width: 0; table-layout: fixed; }
+  #guide-map + .table-wrap th { white-space: normal; }
+  #guide-map + .table-wrap th:nth-child(1) { width: 8%; }
+  #guide-map + .table-wrap th:nth-child(2) { width: 30%; }
+  #guide-map + .table-wrap th:nth-child(3) { width: 36%; }
+  #guide-map + .table-wrap th:nth-child(4) { width: 26%; }
+  #guide-map + .table-wrap td { overflow-wrap: break-word; }
   .guide th {
     text-align: left; font-size: 12px; font-weight: 700; color: var(--ink-2);
     padding: 9px 12px 9px 0; border-bottom: 1px solid var(--ink); white-space: nowrap;
@@ -534,6 +563,10 @@
     .fp-nav { position: static; max-height: none; overflow: visible; }
     #fp-nav-items { display: flex; overflow-x: auto; scrollbar-width: none; }
     #fp-nav-items::-webkit-scrollbar { display: none; }
+    #fp-nav-items.is-x-scrollable:not(.at-x-end) {
+      -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+      mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+    }
     .fp-nav-group { display: flex; flex: 0 0 auto; }
     .fp-nav-group-title { display: none; }
     .fp-nav-item { flex: 0 0 auto; width: auto; min-width: 132px; border-bottom: 1px solid var(--rule); }
@@ -548,11 +581,10 @@
   @media (max-width: 860px) {
     .masthead-main { grid-template-columns: 1fr; align-items: start; }
     .stamp { display: none; }
-    .specimen-meta { grid-template-columns: 1fr; }
-    .specimen-meta > div { border-right: 0; border-bottom: 1px solid var(--rule); padding: 8px 0; }
-    .specimen-meta > div:last-child { border-bottom: 0; }
     .tls-layout { grid-template-columns: 1fr; }
     .tls-span { grid-column: auto; }
+    .tls-span .detail-rows { grid-template-columns: 1fr; }
+    #guide-map + .table-wrap table { min-width: 640px; }
     .case-grid { grid-template-columns: 1fr; }
     .case-group-head { flex-wrap: wrap; }
     .case-group-head > span:last-child { display: none; }
@@ -566,9 +598,12 @@
     .masthead-main { padding: 26px 0 24px; }
     .specimen { padding: 17px 16px 15px; box-shadow: 4px 4px 0 rgba(22,26,20,.07); }
     .specimen-state { display: none; }
-    .tabs { gap: 20px; overflow-x: auto; scrollbar-width: none; }
-    .tabs::-webkit-scrollbar { display: none; }
-    .tabs button { flex: 0 0 auto; white-space: nowrap; font-size: 13px; }
+    .specimen-meta > div { padding-right: 9px; }
+    .specimen-meta dt { font-size: 10.5px; letter-spacing: .03em; white-space: nowrap; }
+    .specimen-meta dd { font-size: 13px; }
+    .tls-code { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .tabs { gap: 0 20px; flex-wrap: wrap; overflow: visible; }
+    .tabs button { flex: 0 0 auto; white-space: nowrap; font-size: 13px; padding: 10px 0 8px; }
     .btn-group { width: 100%; overflow-x: auto; }
     .btn-group .btn { flex: 1 0 auto; }
     .controls .spacer { display: none; }
@@ -678,7 +713,7 @@
 
   <!-- ====== Tab1: 指纹采集结果 ====== -->
   <div id="tab-collect-content">
-    <div class="fp-legend"><span class="lg-bad">红色</span> 与预期不符（强信号） · <span class="lg-warn">黄色</span> 环境相关弱信号（API/能力不可用）</div>
+    <div class="fp-legend"><span class="lg-bad">红色</span> 明确异常（强信号） · <span class="lg-warn">黄色</span> 环境 / 能力差异（弱信号）</div>
     <div class="results-shell">
       <nav class="fp-nav" id="fp-nav" aria-label="指纹维度导航">
         <div class="fp-nav-head"><span>指纹维度</span><span class="fp-nav-hint">点击切换 · 可滚动</span></div>
@@ -811,6 +846,7 @@
         <p>浏览器 JavaScript 读不到 TLS 握手。部署到 Cloudflare Workers 后，边缘可以返回本次连接的 TLS 版本、加密套件、HTTP 协议与网络 RTT；JA3/JA4 需要 Bot Management。</p>
         <div class="tls-actions"><button type="button" class="btn primary" onclick="probeTls()">读取当前连接</button></div>
         <div id="tls-result" class="tls-result">尚未读取。点击按钮从 <code>/api/tls</code> 读取。</div>
+        <div class="tls-expect"><span class="tls-expect-label">预期</span><span>TLS 1.2 / 1.3 · HTTP/1.1 · HTTP/2 · HTTP/3</span></div>
       </section>
 
       <section class="tls-panel">
@@ -836,6 +872,7 @@ python tools/tls_probe.py --impersonate chrome110</pre>
           <div class="drow"><dt>Client RTT</dt><dd>边缘测算的客户端网络往返延迟</dd></div>
           <div class="drow"><dt>JA4</dt><dd>更现代的顺序无关指纹，需要 Bot Management</dd></div>
           <div class="drow"><dt>TCP/IP TTL</dt><dd>IP 包头字段，需抓包；本页与浏览器 JS 都无法读取</dd></div>
+          <div class="drow"><dt>SNI / ALPN</dt><dd>握手声明的目标域名与协议列表，抓包或边缘日志可见</dd></div>
         </dl>
         <p class="tls-note">Chrome 会随机化 ClientHello 的扩展顺序，同一台 Chrome 的 JA3 也可能每次不同，这是正常现象。需要稳定比对时，优先看 JA4（Cloudflare Bot Management）或使用 curl_cffi 这类固定指纹的客户端。</p>
       </section>
@@ -936,6 +973,14 @@ python tools/tls_probe.py --impersonate chrome110</pre>
             </ul>
             <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/14_jiasule_521" target="_blank" rel="noopener">完整案例 →</a>
           </article>
+          <aside class="case-side">
+            <h4>本层判读</h4>
+            <ul>
+              <li><b>先认形态</b>：412 瑞数、405 视觉 AWS、521 加速乐、_abck Akamai、cf_clearance Cloudflare。</li>
+              <li><b>再选路线</b>：纯环境题优先补环境；视觉验证码、短时效挑战优先真实浏览器。</li>
+              <li><b>别跳层</b>：按 TLS → 挑战 → 环境 → 签名逐层验证，同站可能多层叠加。</li>
+            </ul>
+          </aside>
         </div>
       </section>
 
@@ -1047,6 +1092,14 @@ python tools/tls_probe.py --impersonate chrome110</pre>
             </ul>
             <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/18_netease_weapi" target="_blank" rel="noopener">完整案例 →</a>
           </article>
+          <aside class="case-side">
+            <h4>本层判读</h4>
+            <ul>
+              <li><b>先定位</b>：搜索参数名 → XHR 断点 → 回溯到生成入口。</li>
+              <li><b>再分流</b>：只依赖输入/常量的走纯算法（18）；读浏览器环境的走补环境（04 / 15）。</li>
+              <li><b>遇 VM 保护</b>：优先让原版 JS 在补好的环境里运行，不强行反编译。</li>
+            </ul>
+          </aside>
         </div>
       </section>
 
@@ -1677,6 +1730,7 @@ window.switchTab = function(tab) {
   $('ctrl-btns').style.display = tab === 'collect' ? '' : 'none';
   $('status').style.display = 'none';
   if (tab !== 'collect') $('env-code-panel').style.display = 'none';
+  if (tab === 'collect') setTimeout(updateNavEdge, 0);
   if (tab === 'tls' && typeof window.probeTls === 'function') window.probeTls();
   // 切换标签时保留已采集结果，回来无需重跑
 };
@@ -1691,11 +1745,13 @@ const escapeHtml = function(value) {
 window.probeTls = async function() {
   const el = $('tls-result');
   if (!el) return;
+  const layout = el.closest('.tls-layout');
   el.textContent = '读取中…';
   try {
     const res = await fetch('/api/tls', { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
+    if (layout) layout.classList.add('is-live');
     const fmt = function(v) { return v == null || v === '' ? '不可用' : v; };
     const tlsVersion = data.tlsVersion || '';
     const tlsBad = /TLSv1\.[01]|SSLv3/i.test(tlsVersion);
@@ -1714,7 +1770,8 @@ window.probeTls = async function() {
     ];
     el.innerHTML = `<dl class="detail-rows">${rows.map(rowHtml).join('')}</dl><p class="tls-hint">${escapeHtml(data.note || '')}</p>`;
   } catch (e) {
-    el.innerHTML = '<p class="tls-fallback">边缘 API 不可用（静态托管 / 本地 http.server 都会这样）。请使用右侧的本地 JA3 捕获工具；部署到 Cloudflare Workers 后，此按钮会返回真实 TLS 元数据。</p>';
+    if (layout) layout.classList.remove('is-live');
+    el.innerHTML = '<p class="tls-fallback">边缘 API 不可用（静态托管 / 本地 http.server 都会这样）。请使用页面中的本地 JA3 捕获工具；部署到 Cloudflare Workers 后，此按钮会返回真实 TLS 元数据。</p>';
   }
 };
 
@@ -1746,7 +1803,7 @@ const DIM_EXPLAIN = {
     details: [
       'Unmasked Renderer 通常最稳定，扩展列表次之。',
       'WebGL2 / WebGPU 维度能补充更多上限与 adapter 信息。',
-      '着色器像素为 0,0,0,0 是有效读数，不是空数据；软件渲染才是强异常信号。'
+      '着色器像素为 0,0,0,0 是有效读数，不是空数据；软件渲染只作黄色环境提示。'
     ]
   },
   audio: {
@@ -1942,19 +1999,19 @@ const DIM_EXPLAIN = {
       '单点命中不一定是机器人，开发工具、测试环境、隐私插件都可能触发；因此强信号红色、环境相关弱信号黄色。'
     ],
     details: [
-      'WebDriver、Headless UA、注入标记和软件渲染是最强信号。',
-      '窗口尺寸、焦点、插件数量属于辅助信号。',
-      '红色行表示与预期值不符，不代表一定是恶意爬虫。'
+      'WebDriver、Headless UA、注入/CDC 标记是强信号。',
+      '软件渲染、窗口尺寸、焦点、插件数量属于环境提示，需结合其他信号判断。',
+      '红色 = 明确异常；黄色 = 环境差异，不代表一定是恶意爬虫。'
     ]
   },
   detect: {
     more: [
-      'Farbling 会让 Canvas 每次输出不同噪声；WebGL debug 拦截会隐藏真实 GPU；UA 精简会固定次要版本号。',
-      '这些是浏览器的隐私保护/反指纹特性，理解它们有助于区分“真实设备差异”和“反指纹噪声”。'
+      'Farbling 会让 Canvas 每次输出不同噪声；WebGL debug 信息可能被隐私特性隐藏；UA 精简会固定次要版本号。',
+      'GPU 信息不可读不一定是拦截：Safari/iOS 等浏览器通常不提供该扩展，禁用 GPU、隐私设置或反指纹插件也会造成同样的结果。'
     ],
     details: [
       'Farbling 开启时，Canvas 指纹不稳定。',
-      'WebGL 拦截会让页面拿不到真实 GPU 型号。',
+      'Unmasked GPU 信息不可读只作黄色能力提示，不代表自动化。',
       'UA 精简在现代 Chrome 中是正常现象，不作为红色告警。'
     ]
   },
@@ -2025,6 +2082,32 @@ window.showDim = function(id) {
   window._activeDim = id;
 };
 
+function updateXEdge(el) {
+  if (!el) return;
+  const scrollable = el.scrollWidth > el.clientWidth + 2;
+  el.classList.toggle('is-x-scrollable', scrollable);
+  el.classList.toggle('at-x-end', !scrollable || el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
+}
+
+function updateNavEdge() {
+  const nav = $('fp-nav');
+  if (nav) {
+    const scrollable = nav.scrollHeight > nav.clientHeight + 2;
+    nav.classList.toggle('is-scrollable', scrollable);
+    nav.classList.toggle('at-end', !scrollable || nav.scrollTop + nav.clientHeight >= nav.scrollHeight - 4);
+  }
+  updateXEdge($('fp-nav-items'));
+}
+
+(function bindNavEdge() {
+  const nav = $('fp-nav');
+  const items = $('fp-nav-items');
+  if (nav) nav.addEventListener('scroll', updateNavEdge, { passive: true });
+  if (items) items.addEventListener('scroll', updateNavEdge, { passive: true });
+  window.addEventListener('resize', updateNavEdge);
+  updateNavEdge();
+})();
+
 function renderDims(dims, activeId) {
   if (!dims.length) return;
   window._dims = dims;
@@ -2055,6 +2138,7 @@ function renderDims(dims, activeId) {
   const target = activeId && dims.some(function(dim) { return dim.id === activeId; })
     ? activeId : dims[0].id;
   window.showDim(target);
+  updateNavEdge();
 }
 
 function shortHash(hash) {
@@ -2093,24 +2177,27 @@ function makeWebglDim(c) {
   if (!basic) {
     note = '当前环境未返回 WebGL 上下文：浏览器可能禁用了 WebGL、没有可用 GPU，或被反指纹扩展拦截。';
   } else if (software) {
-    note = '检测到软件渲染（SwiftShader / llvmpipe），常见于无头浏览器、禁用 GPU 的自动化环境或远程桌面。';
+    note = '检测到软件渲染（SwiftShader / llvmpipe），常见于无头浏览器、禁用 GPU 的自动化环境或远程桌面；此处只作黄色环境提示，不代表自动化。';
   } else if (advanced == null) {
     note = 'WebGL 上下文可用，但没有返回着色器像素；可能被驱动或扩展限制。';
   } else if (allZero) {
     note = '0,0,0,0 是 readPixels 读到的有效 RGBA 值，不是空数据；不同 GPU 的浮点精度会体现为不同的 4 字节结果。';
   }
+  const unmaskedMissing = !!basic && (!params.unmaskedVendor || !params.unmaskedRenderer);
+  if (unmaskedMissing) {
+    note = (note ? note + ' ' : '') + '当前浏览器未提供 Unmasked GPU 信息；Safari/iOS、隐私设置或禁用 GPU 时常见，属于能力差异，不代表自动化。';
+  }
   return {
     id: 'webgl', group: '核心指纹', label: 'WebGL', tag: 'WebGL', cat: 'webgl',
-    alert: software,
-    summary: software ? '软件渲染' : (params.unmaskedVendor || params.vendor || (basic ? 'WebGL 可用' : '不可用')),
+    summary: software ? '软件渲染（弱提示）' : (params.unmaskedVendor || params.vendor || (basic ? 'WebGL 可用' : '不可用')),
     principle: 'GPU 型号、驱动版本与着色器浮点精度不同；getParameter 暴露硬件上限，readPixels 读回的像素也略有差异。',
     note: note,
     rows: [
       {k:'Vendor', v:params.vendor || '—'},
       {k:'Renderer', v:params.renderer || '—'},
-      {k:'Unmasked Vendor', v:params.unmaskedVendor || '—', expected:'可读', b:!params.unmaskedVendor, h:!!params.unmaskedVendor},
-      {k:'Unmasked Renderer', v:params.unmaskedRenderer || '—', expected:'可读', b:!params.unmaskedRenderer, h:!!params.unmaskedRenderer},
-      {k:'软件渲染', v:basic ? (software ? '是（无头/禁用 GPU 常见）' : '否') : '—', expected:'否', b:!!basic && software, g:!!basic && !software},
+      {k:'Unmasked Vendor', v:params.unmaskedVendor || '未提供（浏览器能力限制）', expected:'支持时可读', w:!!basic && !params.unmaskedVendor, h:!!params.unmaskedVendor},
+      {k:'Unmasked Renderer', v:params.unmaskedRenderer || '未提供（浏览器能力限制）', expected:'支持时可读', w:!!basic && !params.unmaskedRenderer, h:!!params.unmaskedRenderer},
+      {k:'软件渲染', v:basic ? (software ? '是（无头/禁用 GPU/远程桌面常见）' : '否') : '—', expected:'通常否（环境允许时）', w:!!basic && software, g:!!basic && !software},
       {k:'Version', v:params.version || '—'},
       {k:'GLSL 版本', v:params.shadingLangVersion || '—'},
       {k:'最大纹理', v:params.maxTextureSize || '—'},
@@ -2219,21 +2306,35 @@ function makeDetectDim(c) {
   const fb = c.farblingDetected;
   const wi = c.webglInterception || {};
   const ua = c.uaReduction || {};
-  const issues = [fb, !wi.webglAvailable, wi.debugInfoBlocked,
-    !wi.unmaskedVendor, !wi.unmaskedRenderer].filter(Boolean).length;
+  const gpuReadable = !!(wi.unmaskedVendor && wi.unmaskedRenderer);
+  const strongCount = fb ? 1 : 0;
+  const weakCount = (wi.webglAvailable ? 0 : 1) + (wi.webglAvailable && !gpuReadable ? 1 : 0);
+  const summary = strongCount
+    ? (strongCount + ' 项异常' + (weakCount ? ' · ' + weakCount + ' 项提示' : ''))
+    : weakCount ? (weakCount + ' 项提示') : '符合预期';
+  let note = '';
+  if (strongCount) {
+    note = '红色 = 会影响指纹稳定性的强信号（如 Canvas Farbling）。';
+  }
+  if (weakCount) {
+    note += (note ? ' ' : '') + '黄色 = 浏览器能力/隐私设置差异，不代表自动化：Safari/iOS 等通常不提供 Unmasked GPU 信息，禁用 GPU 或反指纹插件也会让 WebGL 不可用。';
+  }
+  const debugValue = !wi.webglAvailable ? 'WebGL 不可用'
+    : gpuReadable ? '否（可读真实 GPU）'
+    : wi.debugInfoBlocked ? '是（扩展不可用，常见于 Safari/iOS）' : '部分隐藏';
   return {
     id: 'detect', group: '对抗与行为', label: '反指纹检测', tag: 'Detect', cat: 'detect',
-    alert: issues > 0,
-    summary: issues ? (issues + ' 项异常') : '符合预期',
-    principle: '检测浏览器是否启用 Farbling 噪声、WebGL 调试信息拦截与 UA 精简；红色行表示与预期值不符，这些特征会影响指纹稳定性或风控评分。',
-    note: issues ? '红色高亮 = 与预期值不符；Farbling / WebGL 拦截可能来自隐私浏览器或反指纹扩展。' : '',
+    alert: strongCount > 0,
+    summary: summary,
+    principle: '检测 Canvas Farbling、WebGL 调试信息可读性与 UA 精简。Farbling 会直接破坏指纹稳定性；GPU 信息不可读则可能来自浏览器支持差异或隐私设置。',
+    note: note,
     two: true,
     rows: [
       {k:'Canvas Farbling', v:fb ? '已启用（Brave / Firefox RFP）' : '未检测到', expected:'未检测到', b:!!fb, g:!fb},
-      {k:'WebGL 是否可用', v:wi.webglAvailable ? '是' : '否', expected:'是', g:!!wi.webglAvailable, b:!wi.webglAvailable},
-      {k:'Debug 信息拦截', v:wi.debugInfoBlocked ? '是（GPU 信息被隐藏）' : '否（可读真实 GPU）', expected:'否（可读真实 GPU）', b:!!wi.debugInfoBlocked, g:!wi.debugInfoBlocked},
-      {k:'真实 GPU 厂商', v:wi.unmaskedVendor || '已拦截', expected:'可读', b:!wi.unmaskedVendor, h:!!wi.unmaskedVendor},
-      {k:'真实 GPU 型号', v:wi.unmaskedRenderer || '已拦截', expected:'可读', b:!wi.unmaskedRenderer, h:!!wi.unmaskedRenderer},
+      {k:'WebGL 是否可用', v:wi.webglAvailable ? '是' : '否', expected:'通常可用（禁用 GPU 时除外）', g:!!wi.webglAvailable, w:!wi.webglAvailable},
+      {k:'Debug 信息', v:debugValue, expected:'支持时可读', w:!!wi.webglAvailable && !gpuReadable, g:!!wi.webglAvailable && gpuReadable},
+      {k:'真实 GPU 厂商', v:wi.unmaskedVendor || '未提供（浏览器能力限制）', expected:'支持时可读', w:!!wi.webglAvailable && !wi.unmaskedVendor, h:!!wi.unmaskedVendor},
+      {k:'真实 GPU 型号', v:wi.unmaskedRenderer || '未提供（浏览器能力限制）', expected:'支持时可读', w:!!wi.webglAvailable && !wi.unmaskedRenderer, h:!!wi.unmaskedRenderer},
       {k:'UA 精简', v:ua.isReduced ? '已启用（版本号被固定）' : '完整 UA', expected:'浏览器版本决定'},
       {k:'Chrome 主版本', v:ua.chromeVersion || '—'}
     ]
@@ -2619,23 +2720,33 @@ function makeSupplementalDims(s) {
   // Automation
   const a = (s.automation && s.automation.available) ? s.automation : null;
   const automationIssues = a ? (a.issueCount || 0) : 0;
+  const automationWarnings = a ? (a.warningCount || 0) : 0;
+  const automationSummary = !a ? '不可用'
+    : automationIssues ? (automationIssues + ' 项异常' + (automationWarnings ? ' · ' + automationWarnings + ' 项提示' : ''))
+    : automationWarnings ? (automationWarnings + ' 项提示') : '符合预期';
+  let automationNote = '';
+  if (a && automationIssues) {
+    automationNote = '红色 = 明确的自动化痕迹（WebDriver、Headless UA、注入/CDC 标记）。黄色 = 环境相关弱信号，不单独代表自动化；开发工具、缩放、远程桌面和移动浏览器都可能触发。';
+  } else if (a && automationWarnings) {
+    automationNote = '黄色 = 环境相关弱信号，不单独代表自动化。窗口缩放/全屏/DevTools 会让 inner 大于 outer；软件渲染也会出现在禁用 GPU、远程桌面或虚拟机中。';
+  }
   dims.push({
     id: 'automation', group: '对抗与行为', label: '自动化检测', tag: 'Auto', cat: 'detect',
     alert: automationIssues > 0,
-    summary: a ? (automationIssues ? (automationIssues + ' 项异常') : '符合预期') : '不可用',
-    principle: 'webdriver 标记、CDP/Selenium 注入痕迹、Headless UA、软件渲染、插件与窗口特征都是常见的自动化环境线索；红色行 = 与预期值不符。',
-    note: a && automationIssues ? '红色高亮 = 与预期值不符。WebDriver、Headless UA、注入标记和软件渲染是最强信号；开发工具/自动化测试环境出现告警是预期的。' : '',
+    summary: automationSummary,
+    principle: 'webdriver 标记、CDP/Selenium 注入痕迹、Headless UA 属于强信号；软件渲染、窗口尺寸、插件与语言数量属于环境弱信号。',
+    note: automationNote,
     two: true,
     rows: a ? [
       {k:'navigator.webdriver', v:yesNo(a.webdriver), expected:'false', b:a.webdriver, g:!a.webdriver},
       {k:'Headless UA', v:yesNo(a.headlessUA), expected:'false', b:a.headlessUA, g:!a.headlessUA},
-      {k:'window.chrome', v:yesNo(a.chromeObject), expected:a.chromium ? '存在（Chrome/Edge）' : '不适用（非 Chromium）', b:a.chromium && !a.chromeObject, g:!a.chromium || a.chromeObject},
-      {k:'插件数量', v:a.pluginCount == null ? '—' : a.pluginCount, expected:a.chromium ? '≥1（Chrome）' : '不适用', b:a.chromium && a.pluginCount === 0, g:!a.chromium || a.pluginCount > 0},
-      {k:'语言数量', v:a.languageCount == null ? '—' : a.languageCount, expected:'≥1', b:!a.languageCount, g:!!a.languageCount},
+      {k:'window.chrome', v:yesNo(a.chromeObject), expected:a.chromium ? '通常存在（Chrome/Edge）' : '不适用（非 Chromium）', w:a.chromium && !a.chromeObject, g:!a.chromium || a.chromeObject},
+      {k:'插件数量', v:a.pluginCount == null ? '—' : a.pluginCount, expected:a.chromium ? '≥1（部分环境为 0）' : '不适用', w:a.chromium && a.pluginCount === 0, g:!a.chromium || a.pluginCount > 0},
+      {k:'语言数量', v:a.languageCount == null ? '—' : a.languageCount, expected:'≥1', w:!a.languageCount, g:!!a.languageCount},
       {k:'通知权限', v:a.notificationPermission, expected:'任意状态'},
-      {k:'窗口尺寸', v:a.windowSize, expected:'outer ≥ inner', b:a.sizeAnomaly, g:!a.sizeAnomaly},
+      {k:'窗口尺寸', v:`外 ${a.outerWidth == null ? '—' : a.outerWidth}×${a.outerHeight == null ? '—' : a.outerHeight} / 内 ${a.innerWidth == null ? '—' : a.innerWidth}×${a.innerHeight == null ? '—' : a.innerHeight}`, expected:'通常 outer ≥ inner', w:a.sizeAnomaly},
       {k:'页面焦点', v:a.hasFocus == null ? '—' : yesNo(a.hasFocus), expected:'页面可见时为是', w:a.hasFocus === false && document.visibilityState === 'visible'},
-      {k:'WebGL 渲染器', v:a.webglRenderer || '—', expected:'非软件渲染', b:!!a.softwareRenderer, g:a.softwareRenderer === false},
+      {k:'WebGL 渲染器', v:a.webglRenderer || '—', expected:'非软件渲染', w:!!a.softwareRenderer, g:!!a.webglRenderer && !a.softwareRenderer},
       {k:'注入标记', v:(a.markers || []).join(', ') || '未发现', expected:'未发现', b:(a.markers || []).length > 0, g:(a.markers || []).length === 0},
       {k:'CDC 标记', v:(a.cdcMarkers || []).join(', ') || '未发现', expected:'未发现', b:(a.cdcMarkers || []).length > 0, g:(a.cdcMarkers || []).length === 0}
     ] : [{k:'状态', v:'不可用', expected:'可用', b:1}]

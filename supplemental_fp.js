@@ -502,16 +502,18 @@ function collectAutomation() {
     }
   } catch (error) { /* ignore */ }
 
+  // 强信号：明确的自动化/注入痕迹。弱信号：浏览器能力、窗口状态与渲染路径差异。
   const issues = [];
+  const warnings = [];
   if (webdriver) issues.push('navigator.webdriver=true');
   if (headlessUA) issues.push('Headless UA');
   if (found.length) issues.push('注入标记');
   if (cdc.length) issues.push('CDC 标记');
-  if (softwareRenderer) issues.push('软件渲染');
-  if (chromium && !chromeObject) issues.push('缺少 window.chrome');
-  if (chromium && pluginCount === 0) issues.push('插件数量为 0');
-  if (!languageCount) issues.push('语言列表为空');
-  if (sizeAnomaly) issues.push('窗口尺寸异常');
+  if (softwareRenderer) warnings.push('软件渲染');
+  if (chromium && !chromeObject) warnings.push('缺少 window.chrome');
+  if (chromium && pluginCount === 0) warnings.push('插件数量为 0');
+  if (!languageCount) warnings.push('语言列表为空');
+  if (sizeAnomaly) warnings.push('窗口尺寸内大于外');
 
   return {
     available: true,
@@ -534,7 +536,9 @@ function collectAutomation() {
     softwareRenderer,
     hasFocus: document.hasFocus ? document.hasFocus() : null,
     issues,
-    issueCount: issues.length
+    issueCount: issues.length,
+    warnings,
+    warningCount: warnings.length
   };
 }
 
