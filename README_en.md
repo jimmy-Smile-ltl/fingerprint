@@ -66,6 +66,10 @@ fingerprint/
 ├── tools/tls_probe.py       # Trigger requests / curl_cffi ClientHello
 ├── scripts/build-pages.mjs  # Static-host build (produces dist/)
 ├── deploy/_headers          # Cloudflare response headers
+├── deploy/robots.txt        # Crawler rules
+├── deploy/sitemap.xml       # Sitemap (canonical /)
+├── docs/og-image.png        # 1200×630 social preview
+├── docs/og-card.html        # OG card source (re-renderable)
 ├── wrangler.toml            # Workers static assets (`npx wrangler deploy`)
 └── wrangler.pages.toml      # Pages CLI deploy (optional)
 ```
@@ -336,8 +340,17 @@ npx wrangler pages deploy dist --project-name fingerprint --config wrangler.page
 ```
 
 `deploy/_headers` adds `nosniff` / `Referrer-Policy` / permissions policy plus long-lived caching
-for `vendor/`. Only the demo page, `all_fp.js` and `vendor/` are deployed; research scripts such as
-`test_e2e_ruishu.py` are not exposed as executable endpoints.
+for `vendor/`. Only the demo page, JS dependencies, SEO assets and `vendor/` are deployed; research
+scripts such as `test_e2e_ruishu.py` are not exposed as executable endpoints.
+
+### SEO (built in)
+
+- Title, description, canonical, Open Graph / Twitter Card and `max-image-preview:large`
+- JSON-LD: `WebApplication` + `FAQPage` backed by the visible “About / FAQ” section
+- `/robots.txt` and `/sitemap.xml` are copied by the build; `/og-image.png` is a 1200×630 card
+- `/` is the only sitemap URL; production `/test_fp.html` 301s to `/` and both share the canonical
+- After deploying, submit `https://fingerprint.jimmysmileltl.workers.dev/sitemap.xml` to
+  Google Search Console / Bing Webmaster Tools and verify the property
 
 ## FAQ
 

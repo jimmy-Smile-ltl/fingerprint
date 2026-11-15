@@ -11,6 +11,14 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // Keep one canonical URL for search engines; the build keeps test_fp.html
+    // for local development, but production should consolidate to `/`.
+    if (url.pathname === '/test_fp.html') {
+      const target = new URL('/', url);
+      target.search = url.search;
+      return Response.redirect(target.toString(), 301);
+    }
+
     if (url.pathname === '/api/tls') {
       const cf = request.cf || {};
       const bm = cf.botManagement || {};

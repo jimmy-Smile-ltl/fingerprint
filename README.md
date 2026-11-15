@@ -64,6 +64,10 @@ fingerprint/
 ├── tools/tls_probe.py       # 触发 requests / curl_cffi 的 ClientHello
 ├── scripts/build-pages.mjs  # 静态托管构建脚本（生成 dist/）
 ├── deploy/_headers          # Cloudflare 响应头
+├── deploy/robots.txt        # 爬虫规则
+├── deploy/sitemap.xml       # 站点地图（canonical /）
+├── docs/og-image.png        # 1200×630 社交预览图
+├── docs/og-card.html        # OG 卡片源文件（可重新截图）
 ├── wrangler.toml            # Workers 静态资源（npx wrangler deploy）
 └── wrangler.pages.toml      # Pages 命令行部署（可选）
 ```
@@ -360,7 +364,16 @@ npx wrangler pages deploy dist --project-name fingerprint --config wrangler.page
 
 - `deploy/_headers` 会随构建复制，提供 `nosniff` / `Referrer-Policy` / 权限策略，以及 `vendor/` 长缓存
 - 国内访问：`*.pages.dev` / `*.workers.dev` 一般可访问；自定义域名按 Cloudflare 流程绑定。大陆节点加速通常需要企业版中国网络，普通免费计划使用全球 CDN
-- 构建产物只包含采集页、`all_fp.js` 与 `vendor/`；`test_e2e_ruishu.py` 等研究脚本不会被上传为可执行接口
+- 构建产物只包含采集页、JS 依赖、SEO 静态文件与 `vendor/`；`test_e2e_ruishu.py` 等研究脚本不会被上传为可执行接口
+
+### SEO（已内置）
+
+- 标题、description、canonical、Open Graph / Twitter Card 与 `max-image-preview:large`
+- JSON-LD：`WebApplication` + `FAQPage`（页面底部有可见的“关于 / 常见问题”内容）
+- `/robots.txt` 与 `/sitemap.xml` 随构建复制；`/og-image.png` 为 1200×630 社交预览图
+- 根路径 `/` 是唯一 sitemap 条目；线上 `/test_fp.html` 会 301 到 `/`，且页面共用 canonical，避免重复收录
+- 部署后建议在 Google Search Console / Bing Webmaster Tools 提交
+  `https://fingerprint.jimmysmileltl.workers.dev/sitemap.xml`，并验证域名
 
 ## ❓ FAQ
 

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://fingerprint.jimmysmileltl.workers.dev/sitemap.xml

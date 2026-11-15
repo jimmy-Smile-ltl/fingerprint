@@ -3,8 +3,102 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>浏览器指纹实验室 — Canvas · WebGL · Audio · Fonts</title>
+<title>浏览器指纹实验室 — Canvas · WebGL · JA3 · Node.js 补环境</title>
+<meta name="description" content="本地运行的浏览器指纹检测与 Node.js 补环境工具：覆盖 Canvas、WebGL/WebGPU、Audio、字体、Client Hints、WebRTC、插件/MIME、JA3/TLS 等 25 个维度，附 19 个反爬实战案例。">
+<meta name="keywords" content="浏览器指纹, Canvas 指纹, WebGL 指纹, Audio 指纹, 字体指纹, JA3, TLS 指纹, 反爬, Node.js 补环境, 瑞数, Akamai, Cloudflare, h5st, a_bogus, Browser Fingerprinting">
+<meta name="author" content="JimmySmile">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<meta name="theme-color" content="#f2f3ee">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://fingerprint.jimmysmileltl.workers.dev/">
+<link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23f2f3ee'/%3E%3Crect x='3' y='3' width='3' height='10' fill='%23161a14'/%3E%3Crect x='8' y='3' width='2' height='10' fill='%231f3fd1'/%3E%3Crect x='12' y='3' width='1' height='10' fill='%23161a14'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="浏览器指纹实验室">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://fingerprint.jimmysmileltl.workers.dev/">
+<meta property="og:title" content="浏览器指纹实验室 — 25 个维度与 Node.js 补环境">
+<meta property="og:description" content="本地检测 Canvas、WebGL/WebGPU、Audio、字体、WebRTC、插件/MIME、JA3/TLS 等 25 个浏览器指纹维度，并提供可复现的 Node.js 补环境与 19 个反爬案例。">
+<meta property="og:image" content="https://fingerprint.jimmysmileltl.workers.dev/og-image.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="浏览器指纹实验室：25 个浏览器指纹维度与 Node.js 补环境">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="浏览器指纹实验室 — 25 个维度与 Node.js 补环境">
+<meta name="twitter:description" content="本地检测 25 个浏览器指纹维度，附 Node.js 补环境、TLS/JA3 工具与 19 个反爬案例。">
+<meta name="twitter:image" content="https://fingerprint.jimmysmileltl.workers.dev/og-image.png">
+<meta name="twitter:image:alt" content="浏览器指纹实验室：25 个浏览器指纹维度与 Node.js 补环境">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "浏览器指纹实验室",
+  "alternateName": "Browser Fingerprint Lab",
+  "url": "https://fingerprint.jimmysmileltl.workers.dev/",
+  "description": "本地运行的浏览器指纹检测与 Node.js 补环境工具，覆盖 Canvas、WebGL/WebGPU、Audio、字体、硬件、时区、Client Hints、WebRTC、插件/MIME、自动化检测等 25 个维度。",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Any",
+  "browserRequirements": "Requires JavaScript; supports modern Chrome, Edge, Firefox and Safari.",
+  "inLanguage": "zh-CN",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" },
+  "author": { "@type": "Person", "name": "JimmySmile", "url": "https://github.com/jimmy-Smile-ltl" },
+  "publisher": { "@type": "Person", "name": "JimmySmile", "url": "https://github.com/jimmy-Smile-ltl" },
+  "license": "https://opensource.org/licenses/MIT",
+  "sameAs": ["https://github.com/jimmy-Smile-ltl/fingerprint"],
+  "image": "https://fingerprint.jimmysmileltl.workers.dev/og-image.png",
+  "screenshot": "https://fingerprint.jimmysmileltl.workers.dev/og-image.png",
+  "featureList": [
+    "Canvas 指纹与 Farbling 检测",
+    "WebGL / WebGL2 / WebGPU GPU 参数与着色器像素",
+    "Audio、字体、硬件与时区指纹",
+    "Client Hints、WebRTC、媒体设备、插件/MIME 类型",
+    "自动化痕迹、反指纹检测与一致性检查",
+    "Node.js 浏览器环境补丁与 browser/Node visitorId 对齐"
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "浏览器指纹检测会上传我的数据吗？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "不会。本页的指纹计算全部在浏览器本地完成，报告只保存在本地，设备数据不上传。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "能采集已安装的浏览器扩展列表吗？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "不能。网页没有标准 API 枚举已安装扩展；本页只采集 navigator.plugins 和 MIME 类型，它们主要是 PDF 等内置插件，不代表扩展列表。已知扩展探测需要预置扩展 ID 与 Web Accessible Resources，覆盖不完整，本页不启用。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "为什么 Safari 或某些浏览器读不到 WebGL GPU 信息？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Unmasked GPU 信息依赖 WEBGL_debug_renderer_info 扩展。Safari/iOS、隐私设置、禁用 GPU 或反指纹插件可能不提供该信息；这是浏览器能力差异，不是自动化信号，本页只做黄色弱提示。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "浏览器和 Node.js 的 visitorId 能保持一致吗？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "可以。通过 fp_env_patch.js 补全浏览器环境，再把真实浏览器报告注入 Node.js，即可重算出相同的 visitorId；仓库的 parity demo 会逐项验证。"
+      }
+    }
+  ]
+}
+</script>
 <style>
   :root {
     --paper: #f2f3ee;
@@ -27,6 +121,10 @@
     --display: "Bahnschrift", "DIN Alternate", "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
   html { font-size: 16px; scroll-behavior: smooth; }
   body {
     font-family: var(--sans); font-size: 16px; line-height: 1.7; color: var(--ink);
@@ -545,6 +643,25 @@
   }
   .env-code code { font-family: inherit; }
 
+  /* ===== SEO / about + FAQ ===== */
+  .about-site {
+    margin-top: 48px; padding-top: 22px; border-top: 1.5px solid var(--ink);
+    display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,.85fr); gap: 36px;
+    align-items: start;
+  }
+  .about-site h2 {
+    font-family: var(--display); font-size: clamp(24px, 3vw, 32px); line-height: 1.18;
+    font-weight: 600; letter-spacing: -.01em; margin: 0 0 10px;
+  }
+  .about-site h3 { font-size: 15px; font-weight: 700; margin: 0 0 6px; }
+  .about-site p { font-size: 13px; line-height: 1.8; color: var(--ink-2); margin-bottom: 9px; max-width: 72ch; }
+  .about-site a { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 2px; }
+  .about-links { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 12px; }
+  .faq details { border-bottom: 1px solid var(--rule-faint); padding: 8px 0; }
+  .faq details:first-of-type { border-top: 1px solid var(--rule-faint); }
+  .faq summary { cursor: pointer; font-size: 13px; font-weight: 700; color: var(--ink); }
+  .faq details p { margin: 6px 0 2px; font-size: 12.5px; line-height: 1.75; color: var(--ink-3); }
+
   .footer {
     margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--rule);
     font-family: var(--mono); font-size: 12px; line-height: 1.9; color: var(--ink-3);
@@ -588,6 +705,7 @@
     .case-grid { grid-template-columns: 1fr; }
     .case-group-head { flex-wrap: wrap; }
     .case-group-head > span:last-child { display: none; }
+    .about-site { grid-template-columns: 1fr; gap: 24px; }
   }
   @media (max-width: 600px) {
     .masthead-note { display: none; }
@@ -637,6 +755,14 @@
 <body>
 
 <div class="app">
+  <noscript>
+    <div style="margin:0 0 16px;padding:10px 14px;border-left:3px solid var(--warn);background:var(--paper-2);font-size:13px;line-height:1.7;color:var(--ink-2)">
+      本工具需要启用 JavaScript 才能在浏览器本地采集指纹。你也可以查看
+      <a href="https://github.com/jimmy-Smile-ltl/fingerprint" target="_blank" rel="noopener">GitHub 仓库</a>、
+      <a href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases" target="_blank" rel="noopener">案例库</a>
+      与 <a href="https://github.com/jimmy-Smile-ltl/fingerprint/blob/main/README.md" target="_blank" rel="noopener">README</a>。
+    </div>
+  </noscript>
 
   <!-- ====== Masthead ====== -->
   <header class="masthead">
@@ -653,6 +779,7 @@
     </div>
   </header>
 
+  <main id="main">
   <!-- ====== 综合指纹 ID ====== -->
   <section class="specimen" aria-labelledby="specimenLabel">
     <div class="specimen-top">
@@ -713,6 +840,7 @@
 
   <!-- ====== Tab1: 指纹采集结果 ====== -->
   <div id="tab-collect-content">
+    <h2 class="sr-only">指纹采集结果</h2>
     <div class="fp-legend"><span class="lg-bad">红色</span> 明确异常（强信号） · <span class="lg-warn">黄色</span> 环境 / 能力差异（弱信号）</div>
     <div class="results-shell">
       <nav class="fp-nav" id="fp-nav" aria-label="指纹维度导航">
@@ -1675,11 +1803,46 @@ updateFunToString(Document);
     </div><!-- /guide-layout -->
   </div><!-- /tab-guide-content -->
 
+  <!-- ====== About / FAQ (static, crawlable) ====== -->
+  <section class="about-site" aria-labelledby="about-title">
+    <div>
+      <h2 id="about-title">关于浏览器指纹实验室</h2>
+      <p>浏览器指纹实验室是一个本地优先的浏览器指纹检测与 JavaScript 补环境研究工具。一次采集覆盖 Canvas、WebGL/WebGL2、WebGPU、Audio、字体、硬件、时区、Client Hints、WebRTC、插件/MIME、编解码与自动化检测等 25 个维度，并提供可复现的 Node.js 补环境方案。所有指纹计算在浏览器本地完成，设备数据不会上传。</p>
+      <p>项目适合用于浏览器指纹学习、反爬与风控环境一致性排查、JS 逆向补环境验证。案例覆盖瑞数、Akamai、Cloudflare、AWS WAF、加速乐等挑战层，以及 h5st、a_bogus、x-s、x-zse-96 等签名参数；GitHub 仓库包含 19 个 L1–L6 案例、TLS/JA3 ClientHello 捕获工具、<code>fp_env_patch.js</code> 原型链补环境与浏览器/Node.js visitorId 对照 demo。</p>
+      <div class="about-links">
+        <a href="https://github.com/jimmy-Smile-ltl/fingerprint" target="_blank" rel="noopener">GitHub 仓库</a>
+        <a href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases" target="_blank" rel="noopener">19 个案例</a>
+        <a href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/tools" target="_blank" rel="noopener">TLS / JA3 工具</a>
+        <a href="https://github.com/jimmy-Smile-ltl/fingerprint/blob/main/README.md" target="_blank" rel="noopener">README</a>
+      </div>
+    </div>
+    <div class="faq">
+      <h3>常见问题</h3>
+      <details>
+        <summary>浏览器指纹检测会上传我的数据吗？</summary>
+        <p>不会。本页的指纹计算全部在浏览器本地完成，报告只保存在本地，设备数据不上传。</p>
+      </details>
+      <details>
+        <summary>能采集已安装的浏览器扩展列表吗？</summary>
+        <p>不能。网页没有标准 API 枚举已安装扩展；本页只采集 <code>navigator.plugins</code> 和 MIME 类型，它们主要是 PDF 等内置插件，不代表扩展列表。已知扩展探测需要预置扩展 ID 与 Web Accessible Resources，覆盖不完整，本页不启用。</p>
+      </details>
+      <details>
+        <summary>为什么 Safari 或某些浏览器读不到 WebGL GPU 信息？</summary>
+        <p>Unmasked GPU 信息依赖 <code>WEBGL_debug_renderer_info</code> 扩展。Safari/iOS、隐私设置、禁用 GPU 或反指纹插件可能不提供该信息；这是浏览器能力差异，不是自动化信号，本页只做黄色弱提示。</p>
+      </details>
+      <details>
+        <summary>浏览器和 Node.js 的 visitorId 能保持一致吗？</summary>
+        <p>可以。通过 <code>fp_env_patch.js</code> 补全浏览器环境，再把真实浏览器报告注入 Node.js，即可重算出相同的 visitorId；仓库的 parity demo 会逐项验证。</p>
+      </details>
+    </div>
+  </section>
+  </main>
+
   <!-- ====== Footer ====== -->
   <div class="footer">
-    基于 <a href="https://blog.csdn.net/u012220174/article/details/157870592" target="_blank">CSDN: 深入浏览器指纹</a>
+    基于 <a href="https://blog.csdn.net/u012220174/article/details/157870592" target="_blank" rel="noopener">CSDN: 深入浏览器指纹</a>
     · FingerprintJS 技术
-    · 原型链框架参考 <a href="#">瑞数补环境 run_js_proto.js</a>
+    · 原型链框架参考 <a href="https://github.com/jimmy-Smile-ltl/fingerprint/blob/main/cases/02_ruishu_caict/README.md" target="_blank" rel="noopener">瑞数补环境 run_js_proto.js</a>
     · <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">回到顶部</a>
   </div>
 
