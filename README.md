@@ -33,6 +33,7 @@
   权限/存储、电池/传感器、编解码/DRM、CSS/DOM、JS 引擎、扩展字体/Canvas、自动化检测、一致性检测、行为采样
 - **可视化采集页面**（`test_fp.html`）：浏览器打开 → 自动采集 → 分组维度导航 → 一键复制/下载报告
 - **维度导航 + 原理说明**：每个维度附一条技术原理；「指纹覆盖地图」说明 L1–L6 分层与边界
+- **案例导读**：19 个案例按 L1–L6 分组，卡片给出「机制 / 排查 / 本项目对应」，并链接到完整案例目录
 - **TLS / JA3 记录**：Workers 边缘 `/api/tls` 返回 TLS 版本/套件/HTTP 协议；本地
   `tools/tls_ja3_capture.py` 纯标准库捕获 ClientHello，输出 JA3 / JA3 hash
 - **原型链级补环境**（`fp_env_patch.js`）：`instanceof`、`toString`、getter 全对齐真实浏览器，
@@ -51,7 +52,7 @@ fingerprint/
 ├── supplemental_fp.js       # 扩展环境指纹（WebGL2/WebGPU/WebRTC/Client Hints/媒体/权限等）
 ├── fp_env_patch.js          # Node.js 补环境（Canvas/WebGL/Audio 原型链 + 注入通道）
 ├── fp_env_ruishu_plus.js    # 瑞数增强环境（研究示例，见免责声明）
-├── test_fp.html             # 浏览器采集页面（维度导航 + 原理说明 + 报告导出）
+├── test_fp.html             # 浏览器采集页（维度导航 + 覆盖地图 + 案例导读 + 报告导出）
 ├── test_fp_node.js          # Node.js 冒烟测试（--preset 切换设备画像）
 ├── test_e2e_ruishu.py       # 瑞数 WAF 端到端研究脚本（Python）
 ├── index.js                 # 早期浏览器 demo（依赖 fingerprintjs2 CDN）

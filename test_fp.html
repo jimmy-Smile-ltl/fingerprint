@@ -316,6 +316,7 @@
     color: var(--ink-3); letter-spacing: .02em;
   }
   .coverage-legend span { display: inline-block; padding: 1px 6px; border: 1px solid currentColor; margin-right: 4px; }
+  .coverage-legend a { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 2px; }
   .layer-map { margin: 22px 0 20px; border-top: 1.5px solid var(--ink); }
   .layer-row {
     display: grid; grid-template-columns: 34px 82px minmax(0,1fr) auto;
@@ -351,6 +352,60 @@
   }
   .coverage-callout strong { display: block; font-size: 13.5px; margin-bottom: 4px; }
   .coverage-callout p { font-size: 13px; line-height: 1.7; color: var(--ink-2); max-width: 80ch; }
+
+  /* ===== Case guide ===== */
+  .cases-wrap { max-width: 1100px; }
+  .cases-intro h2 {
+    font-family: var(--display); font-size: clamp(26px, 3.4vw, 36px); line-height: 1.16;
+    font-weight: 600; letter-spacing: -.01em; margin: 0 0 10px;
+  }
+  .cases-intro p { max-width: 78ch; font-size: 14.5px; line-height: 1.75; color: var(--ink-2); }
+  .case-paths {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px;
+    margin-top: 14px; padding: 10px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+    font-size: 12px;
+  }
+  .case-paths-title { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); letter-spacing: .06em; }
+  .case-paths a { color: var(--accent-ink); text-decoration: none; }
+  .case-paths a:hover { text-decoration: underline; }
+  .case-group { margin-top: 26px; scroll-margin-top: 24px; }
+  .case-group-head {
+    display: flex; align-items: center; gap: 10px;
+    padding-bottom: 8px; border-bottom: 1.5px solid var(--ink);
+  }
+  .case-group-head h3 { font-size: 18px; font-weight: 700; }
+  .case-group-head > span:last-child { margin-left: auto; font-size: 12px; color: var(--ink-3); }
+  .case-layer {
+    display: inline-block; padding: 1px 6px; border: 1px solid currentColor;
+    font-family: var(--mono); font-size: 10px; line-height: 1.6; letter-spacing: .03em; white-space: nowrap;
+  }
+  .case-layer.l1 { color: var(--ink-2); }
+  .case-layer.l2 { color: var(--accent-ink); }
+  .case-layer.l3 { color: var(--ok); }
+  .case-layer.l4 { color: var(--violet); }
+  .case-layer.l5 { color: var(--warn); }
+  .case-layer.l6 { color: var(--bad); }
+  .case-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-top: 12px; }
+  .case-card { background: var(--paper-2); border: 1px solid var(--rule); padding: 14px 16px; min-width: 0; }
+  .case-card-head { display: flex; align-items: center; gap: 8px; }
+  .case-num { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+  .case-card-head h4 { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; }
+  .case-line { margin: 8px 0; font-size: 13px; line-height: 1.65; color: var(--ink-2); }
+  .case-card ul { list-style: none; padding: 0; margin: 0; }
+  .case-card li {
+    position: relative; padding-left: 12px; margin-bottom: 4px;
+    font-size: 12px; line-height: 1.65; color: var(--ink-3);
+  }
+  .case-card li::before { content: ""; position: absolute; left: 0; top: .68em; width: 4px; height: 4px; background: var(--rule-2); }
+  .case-card li b { color: var(--ink); font-weight: 700; }
+  .case-card code { font-family: var(--mono); font-size: 11.5px; background: var(--accent-soft); color: var(--accent-ink); padding: 0 4px; border-radius: 2px; }
+  .case-side { background: var(--paper); border: 1px solid var(--rule); padding: 14px 16px; min-width: 0; }
+  .case-side h4 { margin-bottom: 8px; font-size: 13px; font-weight: 700; }
+  .case-side ul { list-style: none; padding: 0; margin: 0; }
+  .case-side li { position: relative; padding-left: 12px; margin-bottom: 5px; font-size: 12px; line-height: 1.65; color: var(--ink-3); }
+  .case-side li::before { content: ""; position: absolute; left: 0; top: .68em; width: 4px; height: 4px; background: var(--rule-2); }
+  .case-link { display: inline-block; margin-top: 8px; font-size: 11.5px; color: var(--accent-ink); text-decoration: underline; text-underline-offset: 2px; }
+  .cases-footnote { margin-top: 18px; font-size: 12px; line-height: 1.7; color: var(--ink-3); }
 
   /* ===== TLS / JA3 ===== */
   .tls-layout { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; align-items: start; }
@@ -483,6 +538,9 @@
     .specimen-meta > div:last-child { border-bottom: 0; }
     .tls-layout { grid-template-columns: 1fr; }
     .tls-span { grid-column: auto; }
+    .case-grid { grid-template-columns: 1fr; }
+    .case-group-head { flex-wrap: wrap; }
+    .case-group-head > span:last-child { display: none; }
   }
   @media (max-width: 600px) {
     .masthead-note { display: none; }
@@ -565,6 +623,7 @@
     <button class="active" role="tab" aria-selected="true" aria-controls="tab-collect-content" onclick="switchTab('collect')" id="tab-collect">指纹采集结果</button>
     <button role="tab" aria-selected="false" aria-controls="tab-coverage-content" onclick="switchTab('coverage')" id="tab-coverage">指纹覆盖地图</button>
     <button role="tab" aria-selected="false" aria-controls="tab-tls-content" onclick="switchTab('tls')" id="tab-tls">TLS / JA3</button>
+    <button role="tab" aria-selected="false" aria-controls="tab-cases-content" onclick="switchTab('cases')" id="tab-cases">案例导读</button>
     <button role="tab" aria-selected="false" aria-controls="tab-guide-content" onclick="switchTab('guide')" id="tab-guide">Node.js 补环境指南</button>
   </div>
 
@@ -626,6 +685,7 @@
         <h2>指纹覆盖地图</h2>
         <p>本页已覆盖 L3 环境层的大部分浏览器可读信号，并新增 L5 行为采样与 L1 TLS 边缘记录。TLS/JA3 通过 Workers 边缘元数据或本地 ClientHello 工具记录；TTL、HTTP/2 帧、设备 SDK 与 App 侧信号需要抓包或 native 工具，仓库用案例文档说明。</p>
         <p class="coverage-legend"><span class="flag-page">本页</span> 实时采集　<span class="flag-js">边界</span> 需边缘/抓包　<span class="flag-case">案例</span> 文档或脚本</p>
+        <p class="coverage-legend"><a href="#" onclick="switchTab('cases');return false;">查看 19 个案例导读</a></p>
       </div>
 
       <div class="layer-map" aria-label="反爬分层与覆盖情况">
@@ -767,7 +827,265 @@ python tools/tls_probe.py --impersonate chrome110</pre>
     </div>
   </div>
 
-  <!-- ====== Tab4: Node.js 补环境指南 ====== -->
+  <!-- ====== Tab4: 案例导读 ====== -->
+  <div id="tab-cases-content" style="display:none">
+    <div class="cases-wrap">
+      <div class="cases-intro">
+        <h2>案例导读</h2>
+        <p>19 个案例按反爬六层模型分组。每张卡片回答三个问题：它在防什么、机制长什么样、从哪里下手。完整代码与参考来源在仓库 <code>cases/</code> 目录。</p>
+        <div class="case-paths">
+          <span class="case-paths-title">阅读路线</span>
+          <a href="#case-l3">新手：17 → 18 → 01 → 08</a>
+          <a href="#case-l3">指纹：01 → 06 → 12 → 10 → 11</a>
+          <a href="#case-l2">WAF：02 → 03 → 07 → 13 → 14</a>
+          <a href="#case-l4">签名：04 → 15 → 16 → 17</a>
+          <a href="#case-l5">行为/合规：09 → 19</a>
+        </div>
+      </div>
+
+      <section class="case-group" id="case-l1">
+        <div class="case-group-head"><span class="case-layer l1">L1</span><h3>传输层</h3><span>握手和网络栈就能识别客户端</span></div>
+        <div class="case-grid">
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">08</span><h4>TLS 指纹</h4><span class="case-layer l1">L1</span></div>
+            <p class="case-line">headers 抄得再全也没用——拦截发生在 TLS 握手阶段。</p>
+            <ul>
+              <li><b>机制</b>：JA3/JA4 由 ClientHello 的版本、套件、扩展、曲线与点格式决定。</li>
+              <li><b>排查</b>：requests 空响应/403 → 换 curl_cffi <code>impersonate</code> 验证是否 TLS 层。</li>
+              <li><b>本项目</b>：TLS 面板边缘元数据 + <code>tools/tls_ja3_capture.py</code> 本地 JA3。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/08_tls_fingerprint" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+          <aside class="case-side">
+            <h4>排查顺序</h4>
+            <ul>
+              <li>403 / 空响应 / 连接重置 → 先看 TLS/JA3</li>
+              <li>412 / 405 / 521 / 下发 JS → 挑战层</li>
+              <li>参数签名错、环境校验失败 → L3 / L4</li>
+              <li>滑块 / 验证码 / 轨迹被拒 → L5</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <section class="case-group" id="case-l2">
+        <div class="case-group-head"><span class="case-layer l2">L2</span><h3>挑战层</h3><span>服务端下发 JS/验证码，执行对了才放行</span></div>
+        <div class="case-grid">
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">02</span><h4>瑞数 WAF</h4><span class="case-layer l2">L2</span></div>
+            <p class="case-line">让浏览器执行一段 VM 生成 cookie——环境补得像，Node 也能生成同样的 cookie。</p>
+            <ul>
+              <li><b>流程</b>：412 + O cookie + meta/<code>$_ts</code> + VM → 执行生成 P cookie → O+P 同轮验证。</li>
+              <li><b>补环境</b>：Timer 立即执行、cookie 按名追加、原型链 getter 与 <code>instanceof</code>。</li>
+              <li><b>本项目</b>：案例 02 可运行；TLS/UA 一致性也会影响回放。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/02_ruishu_caict" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">03</span><h4>Akamai Bot Manager</h4><span class="case-layer l2">L2</span></div>
+            <p class="case-line">难点不在加密，在于把浏览器环境压缩成 sensor_data 交给风控评分。</p>
+            <ul>
+              <li><b>机制</b>：<code>_abck</code> + <code>sensor_data</code> 汇总 Canvas/WebGL/字体/时区等环境信号。</li>
+              <li><b>关键</b>：环境不一致必被拒；签名过了不代表环境过了。</li>
+              <li><b>本项目</b>：用真实报告注入对齐环境，再观察 sensor_data 的收集面。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/03_akamai_bot_manager" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">07</span><h4>Cloudflare</h4><span class="case-layer l2">L2</span></div>
+            <p class="case-line">TLS → 浏览器指纹 → Turnstile，三层递进防线。</p>
+            <ul>
+              <li><b>顺序</b>：先看 TLS/JA3，再看环境/指纹，最后才轮到 Turnstile 无感验证。</li>
+              <li><b>关键</b>：curl_cffi 能过 TLS，但 Turnstile 仍需要真实浏览器/行为。</li>
+              <li><b>本项目</b>：TLS 面板 + 指纹采集评估环境面。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/07_cloudflare" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">13</span><h4>AWS WAF</h4><span class="case-layer l2">L2</span></div>
+            <p class="case-line">405 挑战自带视觉验证码，且通常只有 60 秒时效。</p>
+            <ul>
+              <li><b>机制</b>：problem/state/key + hmac_tag，短时效，需要看图与快速回放。</li>
+              <li><b>与瑞数区别</b>：不是 VM 环境题，而是视觉验证 + 时序窗口。</li>
+              <li><b>本项目</b>：补环境不是主战场；重点是验证码/时效链路。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/13_aws_waf" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">14</span><h4>加速乐 521</h4><span class="case-layer l2">L2</span></div>
+            <p class="case-line">两层 521 各发一个 cookie，写 cookie 必须按名追加。</p>
+            <ul>
+              <li><b>机制</b>：第一层 JS 设置 cookie 后跳转，第二层再下发挑战。</li>
+              <li><b>坑</b>：整体覆盖 <code>document.cookie</code> 会冲掉第一层成果。</li>
+              <li><b>本项目</b>：案例 02 的 cookie setter / 增量语义可直接参照。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/14_jiasule_521" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="case-group" id="case-l3">
+        <div class="case-group-head"><span class="case-layer l3">L3</span><h3>环境层</h3><span>Canvas / WebGL / Audio / 字体 / 硬件 / 时区</span></div>
+        <div class="case-grid">
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">01</span><h4>报告注入一致性</h4><span class="case-layer l3">L3</span></div>
+            <p class="case-line">同一份报告，浏览器 → 补环境 → Node 重算 visitorId 完全一致。</p>
+            <ul>
+              <li><b>作用</b>：验证采集、注入、补环境三段链路是否真的闭环。</li>
+              <li><b>怎么练</b>：先跑自包含 demo，再换真实浏览器报告。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/01_parity_demo" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">05</span><h4>BOSS 直聘</h4><span class="case-layer l3">L3</span></div>
+            <p class="case-line">动态 token + Canvas 指纹 + 反调试三层，token 与环境绑定。</p>
+            <ul>
+              <li><b>机制</b>：<code>__zp_stoken__</code> 生成时读取 Canvas/环境，抄 token 不补环境仍挂。</li>
+              <li><b>排查</b>：hook cookie setter / 断点定位 token 写入点。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/05_boss_zhipin" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">06</span><h4>设备指纹 SDK</h4><span class="case-layer l3">L3</span></div>
+            <p class="case-line">风控 SDK 用几百个弱特征组合设备 ID——先看清采集面。</p>
+            <ul>
+              <li><b>采集面</b>：Canvas/WebGL/Audio/字体/传感器/网络/存储等。</li>
+              <li><b>本项目</b>：Web 环境采集与注入；App 侧 native 需另行分析。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/06_device_sdk" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">10</span><h4>WebRTC 泄露</h4><span class="case-layer l3">L3</span></div>
+            <p class="case-line">代理藏住 HTTP 来源，WebRTC 却可能从 STUN/mDNS/IPv6 旁路泄露真实 IP。</p>
+            <ul>
+              <li><b>机制</b>：ICE candidate 暴露 host/srflx/relay 地址。</li>
+              <li><b>本项目</b>：WebRTC 维度采集候选类型/地址；代理场景重点检查。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/10_webrtc" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">11</span><h4>自动化检测</h4><span class="case-layer l3">L3</span></div>
+            <p class="case-line">站点从「标记 → 协议 → 指纹 → 行为」四层识别自动化。</p>
+            <ul>
+              <li><b>信号</b>：webdriver、CDP 痕迹、Headless、插件/窗口/焦点、软件渲染。</li>
+              <li><b>本项目</b>：自动化检测逐项标注预期值，异常红色告警。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/11_automation_detection" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">12</span><h4>字体：反爬 vs 指纹</h4><span class="case-layer l3">L3</span></div>
+            <p class="case-line">字体有两个相反角色——字体反爬用字形藏数据，字体指纹用安装列表识别设备。</p>
+            <ul>
+              <li><b>反爬</b>：自定义字体 cmap 字形映射，用 fontTools 解。</li>
+              <li><b>指纹</b>：<code>measureText</code> 宽度推断安装字体；本页 16 + 94 候选。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/12_font" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="case-group" id="case-l4">
+        <div class="case-group-head"><span class="case-layer l4">L4</span><h3>签名层</h3><span>请求参数带动态签名/加密体</span></div>
+        <div class="case-grid">
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">04</span><h4>京东 h5st</h4><span class="case-layer l4">L4</span></div>
+            <p class="case-line">魔改哈希 + 字节码 VM + 环境指纹，环境变了签名就错。</p>
+            <ul>
+              <li><b>定位</b>：抓当前 bundle → <code>__genKey</code> → 验证魔改 SHA256。</li>
+              <li><b>路线</b>：插桩还原或补环境跑原版 JS。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/04_jd_h5st" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">15</span><h4>抖音 a_bogus</h4><span class="case-layer l4">L4</span></div>
+            <p class="case-line">请求级动态签名：插桩还原算法，或补环境让原版 JS 自己跑。</p>
+            <ul>
+              <li><b>机制</b>：a_bogus 与 UA、时间、请求参数等拼接后编码。</li>
+              <li><b>路线</b>：先抓一份请求作对照；插桩找拼接点，或 <code>fp_env_patch</code> 做基座。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/15_douyin_a_bogus" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">16</span><h4>小红书 x-s / shield</h4><span class="case-layer l4">L4</span></div>
+            <p class="case-line">x-s 不是单参数，而是签名族；Web 跑 JSVMP，App 在 native so。</p>
+            <ul>
+              <li><b>签名族</b>：x-s / x-s-common / x-t 等配合使用，缺一个就挂。</li>
+              <li><b>先定端</b>：Web 与 App 工具链完全不同。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/16_xiaohongshu_xs" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">17</span><h4>知乎 x-zse-96</h4><span class="case-layer l4">L4</span></div>
+            <p class="case-line">只有「签名 + 一个 cookie」两道锁，最适合练完整逆向闭环。</p>
+            <ul>
+              <li><b>流程</b>：搜参数 → XHR 断点 → 定位 Webpack 模块 → 复现算法。</li>
+              <li><b>注意</b>：签名与 cookie 配套；入门首选。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/17_zhihu_x_zse_96" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">18</span><h4>网易云 weapi</h4><span class="case-layer l4">L4</span></div>
+            <p class="case-line">请求体 AES + 密钥 RSA 的两段式加密，纯算法可完全用 Python 复现。</p>
+            <ul>
+              <li><b>机制</b>：<code>params</code> = AES(JSON)，<code>encSecKey</code> = RSA(随机密钥)。</li>
+              <li><b>区别</b>：接口加密，不是环境校验，不需要补环境。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/18_netease_weapi" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="case-group" id="case-l5">
+        <div class="case-group-head"><span class="case-layer l5">L5</span><h3>行为层</h3><span>轨迹、节奏与验证码</span></div>
+        <div class="case-grid">
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">09</span><h4>行为 / 轨迹指纹</h4><span class="case-layer l5">L5</span></div>
+            <p class="case-line">拼图拼对不代表是人——轨迹「像人的不完美」才是通过关键。</p>
+            <ul>
+              <li><b>机制</b>：速度、加速度、停顿、抖动、轨迹形状综合评分。</li>
+              <li><b>坑</b>：过于平滑/匀速反而暴露机器；本页行为采样可观察速度/路径。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/09_behavioral" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+          <aside class="case-side">
+            <h4>本页可观测</h4>
+            <ul>
+              <li>指针轨迹长度、平均/峰值速度</li>
+              <li>点击、按键、触摸、滚动次数</li>
+              <li>行为采样只记录统计，不记录按键内容或坐标明细</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <section class="case-group" id="case-l6">
+        <div class="case-group-head"><span class="case-layer l6">L6</span><h3>合规层</h3><span>技术中立不等于行为合法</span></div>
+        <div class="case-grid">
+          <article class="case-card">
+            <div class="case-card-head"><span class="case-num">19</span><h4>合规与判例</h4><span class="case-layer l6">L6</span></div>
+            <p class="case-line">判例关注「抓什么、抓多少、用来干什么」，而不是「怎么绕过的」。</p>
+            <ul>
+              <li><b>判例</b>：大众点评诉百度、平台数据案等。</li>
+              <li><b>边界</b>：授权、robots、公开数据、量级、商业替代；开工前先自检。</li>
+            </ul>
+            <a class="case-link" href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/19_compliance" target="_blank" rel="noopener">完整案例 →</a>
+          </article>
+          <aside class="case-side">
+            <h4>合规自检</h4>
+            <ul>
+              <li>是否有授权或明确允许的公开接口</li>
+              <li>是否遵守 robots、服务条款与频率限制</li>
+              <li>抓取量级、用途与是否形成商业替代</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <p class="cases-footnote">案例只用于理解机制与排查思路；请遵守目标站条款与法律法规。完整实现、踩坑记录和参考来源见各案例 README。</p>
+    </div>
+  </div>
+
+  <!-- ====== Tab5: Node.js 补环境指南 ====== -->
   <div id="tab-guide-content" style="display:none">
     <div class="guide-layout">
       <aside class="guide-aside">
@@ -1331,7 +1649,7 @@ const setStatus = (t, type) => { const e=$('status'); e.textContent=t; e.classNa
 
 // Tab switch
 window.switchTab = function(tab) {
-  ['collect', 'coverage', 'tls', 'guide'].forEach(function(name) {
+  ['collect', 'coverage', 'tls', 'cases', 'guide'].forEach(function(name) {
     const active = name === tab;
     const btn = $('tab-' + name);
     const pane = $('tab-' + name + '-content');

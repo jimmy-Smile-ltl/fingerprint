@@ -35,6 +35,7 @@ so headless code emits a fingerprint identical to your real browser.
 - **Visual collection page** (`test_fp.html`): open in browser → auto-collect → grouped dimension nav →
   one-click copy/download of the report
 - **Dimension nav + principles**: each dimension explains its mechanism; a coverage map documents the L1–L6 layers
+- **Case guide**: 19 cases grouped by L1–L6, each card summarizing mechanism / diagnosis / tooling, with links to the full case README
 - **TLS / JA3 recording**: the Workers `/api/tls` endpoint returns TLS version/cipher/HTTP protocol;
   `tools/tls_ja3_capture.py` captures ClientHello locally (stdlib only) and prints JA3 / JA3 hash
 - **Prototype-chain-level env patch** (`fp_env_patch.js`): `instanceof`, `toString` and getters all align with a real browser;
@@ -53,7 +54,7 @@ fingerprint/
 ├── supplemental_fp.js       # Supplemental environment signals (WebGL2/WebGPU/WebRTC/CH/media/...)
 ├── fp_env_patch.js          # Node.js environment patch (Canvas/WebGL/Audio prototype chains + injection)
 ├── fp_env_ruishu_plus.js    # Enhanced Ruishu environment (research example, see Disclaimer)
-├── test_fp.html             # Browser collection page (dimension nav + principles + report export)
+├── test_fp.html             # Browser collection page (dimension nav + coverage map + case guide + report export)
 ├── test_fp_node.js          # Node.js smoke test (--preset to switch device profiles)
 ├── test_e2e_ruishu.py       # Ruishu WAF end-to-end research script (Python)
 ├── index.js                 # Legacy browser demo (depends on fingerprintjs2 CDN)
