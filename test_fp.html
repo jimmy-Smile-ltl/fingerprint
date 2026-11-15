@@ -209,15 +209,30 @@
     font-weight: 600; letter-spacing: -.01em; margin: 8px 0 10px;
   }
   .principle {
-    display: flex; gap: 10px; align-items: baseline; max-width: none;
+    display: flex; gap: 10px; align-items: flex-start; max-width: none;
     background: var(--paper); border-left: 2px solid var(--rule-2);
-    padding: 8px 12px; margin: 0 0 14px;
+    padding: 9px 12px; margin: 0 0 14px;
     font-size: 13px; line-height: 1.7; color: var(--ink-2);
   }
   .principle-label {
-    flex: 0 0 auto; font-family: var(--mono); font-size: 10px; letter-spacing: .08em;
+    flex: 0 0 auto; margin-top: 1px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .08em;
     color: var(--ink-3); border: 1px solid var(--rule); padding: 1px 5px; line-height: 1.5;
   }
+  .principle-body { min-width: 0; }
+  .principle-body p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--ink-2); }
+  .principle-body p + p { margin-top: 6px; }
+  .principle-details { margin-top: 8px; padding-top: 7px; border-top: 1px dashed var(--rule); }
+  .principle-details-title {
+    margin-bottom: 3px; font-family: var(--mono); font-size: 10px;
+    letter-spacing: .06em; color: var(--ink-3);
+  }
+  .principle-details ul { list-style: none; padding: 0; margin: 0; }
+  .principle-details li {
+    position: relative; padding-left: 11px; margin-bottom: 3px;
+    font-size: 12px; line-height: 1.6; color: var(--ink-3);
+  }
+  .principle-details li::before { content: ""; position: absolute; left: 0; top: .68em; width: 4px; height: 4px; background: var(--rule-2); }
   .detail-note {
     font-size: 12.5px; line-height: 1.7; color: var(--warn);
     background: rgba(138,90,0,.06); border-left: 2px solid var(--warn);
@@ -1711,12 +1726,278 @@ function rowHtml(row) {
   return `<div class="drow ${row.b ? 'is-bad' : ''}"><dt>${escapeHtml(row.k)}${expected}</dt><dd class="${cls}">${escapeHtml(row.v)}</dd></div>`;
 }
 
+const DIM_EXPLAIN = {
+  canvas: {
+    more: [
+      '浏览器把绘制指令交给系统字体引擎与 GPU 合成：Windows DirectWrite、macOS Core Text、Linux FreeType 在字距、抗锯齿和颜色管理上各不相同。',
+      '同一段文字、emoji 与几何图形在 toDataURL 时会编码成 PNG，渲染差异会直接落在字节流里，因此哈希在不同设备/系统上通常不同。'
+    ],
+    details: [
+      '优先看哈希是否稳定：同一设备重复采集应一致；Farbling 会让每次结果不同。',
+      '文字、emoji、连字和复杂路径最能放大渲染差异。',
+      '无头环境常用软件渲染，Canvas 哈希可能与真实 GPU 明显不同。'
+    ]
+  },
+  webgl: {
+    more: [
+      'getParameter 返回 GPU 厂商/渲染器、纹理/视口上限与扩展集合，这些值由硬件和驱动共同决定。',
+      '高级指纹让 GPU 执行一段顶点/片段着色器，再用 readPixels 读回像素；浮点精度与舍入差异会体现在 RGBA 字节上。'
+    ],
+    details: [
+      'Unmasked Renderer 通常最稳定，扩展列表次之。',
+      'WebGL2 / WebGPU 维度能补充更多上限与 adapter 信息。',
+      '着色器像素为 0,0,0,0 是有效读数，不是空数据；软件渲染才是强异常信号。'
+    ]
+  },
+  audio: {
+    more: [
+      'OfflineAudioContext 用振荡器产生三角波，经过动态压缩器后离线渲染 1 秒波形，不会发声。',
+      '不同系统的音频栈、重采样与浮点实现会让 4500–5000 区间的采样点在小数位上产生差异。'
+    ],
+    details: [
+      '同一设备/浏览器通常稳定；不同平台差异更明显。',
+      '采样窗口避开起始瞬态，减少边界噪声。',
+      '超时或被禁用时会返回空值，需要区分“不可用”和“值为零”。'
+    ]
+  },
+  fonts: {
+    more: [
+      '通过 Canvas measureText 比较目标字体与 fallback 字体的渲染宽度，可以判断某个字体是否已安装。',
+      'Windows、macOS、Linux 的预装字体集不同；Office/Adobe 套件还会额外安装字体，进一步增加区分度。'
+    ],
+    details: [
+      '只检查主字体（逗号前），避免 fallback 字体干扰判断。',
+      '字体列表熵高，但测量结果受浏览器/渲染设置影响。',
+      '扩展字体维度使用 94 个候选补足核心 16 字体之外的信息。'
+    ]
+  },
+  hardware: {
+    more: [
+      'navigator 暴露 CPU 核心数、内存、触点数与平台；单个字段熵不高，组合后用于辅助区分设备。',
+      '这些值也最容易被伪造，因此要和 UA、Client Hints、屏幕、WebGL 等信号交叉校验。'
+    ],
+    details: [
+      'deviceMemory 是约简值（0.25/0.5/1/2/4/8），不是真实内存。',
+      '触点数与 Client Hints 的 mobile 标记可以互相验证。',
+      '平台字段应与 UA/UA-CH 平台保持一致。'
+    ]
+  },
+  timezone: {
+    more: [
+      'IANA 时区、UTC 偏移与语言列表反映系统配置，常被用来推断地理区域和用户偏好。',
+      '站点通常会把时区与 IP/边缘国家、语言、WebRTC 网络信号交叉比对，而不是单看时区。'
+    ],
+    details: [
+      '时区与 UTC 偏移应一致，一致性检测会校验 Intl 与 Date 的偏移。',
+      'VPN 通常改变 IP，但不会自动改变系统时区。',
+      '语言列表的顺序也可能被用于指纹。'
+    ]
+  },
+  environment: {
+    more: [
+      'UA、屏幕、DPR、语言与浏览器暴露的网络信息是最基础的环境信号，适合做交叉校验。',
+      '这些字段当前不参与 core visitorId，只在页面上作为环境补充展示。'
+    ],
+    details: [
+      'Network Information（effectiveType/RTT/downlink）仅 Chromium 系支持。',
+      '屏幕可用区域、DPR 与触点数可以和 Client Hints 对照。'
+    ]
+  },
+  'client-hints': {
+    more: [
+      'User-Agent Client Hints 把 UA 拆成品牌列表、平台、架构、位宽、完整版本等高熵字段。',
+      '品牌列表与导航器平台、UA 字符串往往一起被校验，伪装 UA 但忘了 CH 很容易露馅。'
+    ],
+    details: [
+      '高熵值需要异步调用 getHighEntropyValues。',
+      '非 Chromium 浏览器不支持该 API，不应作为异常。'
+    ]
+  },
+  webgl2: {
+    more: [
+      'WebGL2 暴露比 WebGL1 更多的硬件上限与扩展，仍由 GPU/驱动决定。',
+      '它和 WebGL1、WebGPU 一起看，能更完整地描述图形能力。'
+    ],
+    details: [
+      '不可用不一定是异常：旧浏览器、禁用 GPU 或隐私设置都可能导致。',
+      '重点关注 Unmasked Renderer、最大纹理/3D 纹理与扩展数量。'
+    ]
+  },
+  webgpu: {
+    more: [
+      'WebGPU 的 adapter.info 暴露厂商、架构与设备信息，limits/features 反映计算与渲染能力。',
+      '这是较新的 API，支持率还不高；可用时能提供比 WebGL 更现代的 GPU 画像。'
+    ],
+    details: [
+      'adapter 不可用可能来自无 GPU、headless 或浏览器未启用 WebGPU。',
+      'featureCount 和最大纹理/Buffer 限制可用于区分 GPU 档位。'
+    ]
+  },
+  webrtc: {
+    more: [
+      'RTCPeerConnection 收集 ICE candidate，可能暴露 host、srflx、relay 地址或 mDNS 名称。',
+      '代理只改变 HTTP 出口，WebRTC 可能从旁路泄露真实网络环境，因此常被反爬用于交叉验证。'
+    ],
+    details: [
+      '本页只使用空 STUN 配置，不连接外部服务器。',
+      '候选类型（host / srflx / relay）比单个地址更能说明网络形态。',
+      '候选地址只在本地展示，不会上传。'
+    ]
+  },
+  media: {
+    more: [
+      'enumerateDevices 暴露摄像头、麦克风和扬声器的数量与类型，标签通常需要用户授权。',
+      '设备数量与类型可以补充硬件画像；0 个设备可能是无外设、权限限制或 headless。'
+    ],
+    details: [
+      '设备标签在未授权时为空白，不应视为采集失败。',
+      '结合 User-Agent 与硬件信息判断是否合理。'
+    ]
+  },
+  speech: {
+    more: [
+      'speechSynthesis.getVoices() 返回系统/浏览器可用的 TTS 语音列表。',
+      '语音名称、语言和本地/在线属性由操作系统与浏览器共同决定，可用来区分平台。'
+    ],
+    details: [
+      '语音列表是异步加载的，需要等待 voiceschanged 或超时。',
+      '0 个语音可能来自 headless 或精简系统。'
+    ]
+  },
+  permissions: {
+    more: [
+      'Permissions API 返回权限状态，StorageManager 提供配额与使用量，localStorage 可用性反映隐私设置。',
+      '这些状态组合能辅助识别浏览器配置与隐私模式，但单点熵不高。'
+    ],
+    details: [
+      '查询权限状态不会弹窗；真正申请权限才会。',
+      '隐私模式可能禁用或限制 localStorage 与存储配额。'
+    ]
+  },
+  battery: {
+    more: [
+      'Battery Status API 暴露电量、充电状态、充电剩余时间与放电剩余时间。',
+      '站点常把它作为设备指纹或反自动化信号：非法数值通常意味着补环境或伪造实现；默认插电模式则同时出现在台式机和虚拟机上。'
+    ],
+    details: [
+      '电量应在 0–100%；充电/放电时间应为非负数或 ∞。',
+      '充电中 / 100% / 充电 0s / 放电 ∞ 只做黄色弱提示。',
+      '电量越界或时间为负数会触发红色告警。'
+    ]
+  },
+  codecs: {
+    more: [
+      'canPlayType 反映浏览器/平台对 H.264、HEVC、VP9、AV1、AAC 等编解码器的支持。',
+      'EME 检测进一步暴露 Widevine / PlayReady 等 DRM 能力，可辅助区分设备类型和浏览器发行版。'
+    ],
+    details: [
+      '不支持某种编码不一定是异常，取决于平台和浏览器版本。',
+      'Widevine/PlayReady 结果受安全上下文与平台影响。'
+    ]
+  },
+  css: {
+    more: [
+      'matchMedia 与 CSS.supports 反映渲染引擎能力、显示能力和用户偏好（深色模式、动态范围、指针类型）。',
+      '这些信号稳定但熵有限，更适合作为辅助特征。'
+    ],
+    details: [
+      'prefers-color-scheme、prefers-reduced-motion 等会随用户设置变化。',
+      '指针类型可和触点数、Client Hints mobile 交叉验证。'
+    ]
+  },
+  'js-engine': {
+    more: [
+      'Math、Date、Intl 的边界行为与错误栈格式由 JS 引擎实现决定。',
+      '不同浏览器/运行时版本在这些细节上存在差异，可用于辅助识别引擎与版本。'
+    ],
+    details: [
+      'Math 边界值比常规计算结果更能暴露实现差异。',
+      'Intl 时区/日历/数字系统还能反映系统区域设置。',
+      '仅凭错误栈无法确定版本，应与 UA-CH 等信号组合。'
+    ]
+  },
+  'fonts-expanded': {
+    more: [
+      '在核心 16 字体之外扩大到 94 个候选，覆盖 Windows/macOS/Linux 预装字体以及 Office/Adobe 字体。',
+      '字体安装列表通常稳定且熵高，是设备画像中很有价值的一维。'
+    ],
+    details: [
+      '检测方法仍是 measureText 宽度对比。',
+      '字体越独特，区分度越高，但也越容易暴露真实设备。'
+    ]
+  },
+  'canvas-extra': {
+    more: [
+      '在基础/高级 Canvas 之外增加渐变文字、emoji、混合模式、evenodd 路径等独立画布测试。',
+      '每个测试单独哈希并检查稳定性，扩大渲染差异的覆盖范围。'
+    ],
+    details: [
+      '不同测试对字体、GPU、颜色管理的敏感度不同。',
+      '如果两次渲染不一致，可能是 Farbling 或异步资源导致。'
+    ]
+  },
+  automation: {
+    more: [
+      '站点从显式标记（webdriver）、协议痕迹（CDP/Selenium）、环境线索（Headless/软件渲染/插件）和行为四层识别自动化。',
+      '单点命中不一定是机器人，开发工具、测试环境、隐私插件都可能触发；因此强信号红色、环境相关弱信号黄色。'
+    ],
+    details: [
+      'WebDriver、Headless UA、注入标记和软件渲染是最强信号。',
+      '窗口尺寸、焦点、插件数量属于辅助信号。',
+      '红色行表示与预期值不符，不代表一定是恶意爬虫。'
+    ]
+  },
+  detect: {
+    more: [
+      'Farbling 会让 Canvas 每次输出不同噪声；WebGL debug 拦截会隐藏真实 GPU；UA 精简会固定次要版本号。',
+      '这些是浏览器的隐私保护/反指纹特性，理解它们有助于区分“真实设备差异”和“反指纹噪声”。'
+    ],
+    details: [
+      'Farbling 开启时，Canvas 指纹不稳定。',
+      'WebGL 拦截会让页面拿不到真实 GPU 型号。',
+      'UA 精简在现代 Chrome 中是正常现象，不作为红色告警。'
+    ]
+  },
+  consistency: {
+    more: [
+      '把 UA、Client Hints、navigator.platform、语言、屏幕、WebGL 渲染器和时区偏移交叉比对，专门寻找互相矛盾的信号。',
+      '强不一致通常比单个指纹更有价值：它可能来自 UA 伪装、补环境实现错误、代理或虚拟机。'
+    ],
+    details: [
+      '红色 = 强不一致；黄色 = 环境相关的弱信号。',
+      '例如 UA 说 Windows，但 WebGL 返回 Apple/Metal，这是典型矛盾。',
+      '一致性检查不替代单个指纹，只是增加一层交叉验证。'
+    ]
+  },
+  behavior: {
+    more: [
+      '记录指针移动路径、速度、点击、按键和滚动等行为统计，观察“像不像人”。',
+      '行为风控通常看轨迹的自然不完美（速度变化、停顿、抖动），过于平滑或匀速反而更容易被判定为机器。'
+    ],
+    details: [
+      '采样只保留数量、路径长度和速度，不记录按键内容或坐标明细。',
+      '点击 5 秒采样后与页面交互即可。',
+      '单次行为不足以判定，需要结合轨迹、时序和验证码综合评分。'
+    ]
+  }
+};
+
 function detailHtml(dim, index, total) {
   const rows = dim.rows.map(rowHtml).join('');
   let body = `<dl class="detail-rows ${dim.two ? 'two-col' : ''}">${rows}</dl>`;
   if (dim.side) {
     body = `<div class="detail-columns"><dl class="detail-rows">${rows}</dl>${dim.side}</div>`;
   }
+  const explain = DIM_EXPLAIN[dim.id] || {};
+  const principles = [dim.principle].concat(explain.more || []);
+  const principleBody = principles.map(function(text) {
+    return `<p>${escapeHtml(text)}</p>`;
+  }).join('');
+  const detailList = explain.details && explain.details.length
+    ? `<div class="principle-details"><div class="principle-details-title">怎么读</div><ul>${explain.details.map(function(text) {
+        return `<li>${escapeHtml(text)}</li>`;
+      }).join('')}</ul></div>`
+    : '';
   return `<div class="detail-bar cat-${dim.cat}"></div>
     <div class="detail-inner">
       <div class="detail-top">
@@ -1724,7 +2005,7 @@ function detailHtml(dim, index, total) {
         <span class="detail-count">${index + 1} / ${total}</span>
       </div>
       <h3>${escapeHtml(dim.label)}</h3>
-      <p class="principle"><span class="principle-label">原理</span>${escapeHtml(dim.principle)}</p>
+      <div class="principle"><span class="principle-label">原理</span><div class="principle-body">${principleBody}${detailList}</div></div>
       ${dim.note ? `<p class="detail-note ${dim.alert ? 'is-alert' : ''}">${escapeHtml(dim.note)}</p>` : ''}
       ${body}
       ${dim.extra || ''}

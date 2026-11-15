@@ -34,7 +34,7 @@ so headless code emits a fingerprint identical to your real browser.
   automation markers, consistency checks and behavior sampling
 - **Visual collection page** (`test_fp.html`): open in browser → auto-collect → grouped dimension nav →
   one-click copy/download of the report
-- **Dimension nav + principles**: each dimension explains its mechanism; a coverage map documents the L1–L6 layers
+- **Dimension nav + rich explanations**: each dimension includes multi-paragraph principles and "how to read it" notes; a coverage map documents the L1–L6 layers
 - **Case guide**: 19 cases grouped by L1–L6, each card summarizing mechanism / diagnosis / tooling, with links to the full case README
 - **TLS / JA3 recording**: the Workers `/api/tls` endpoint returns TLS version/cipher/HTTP protocol;
   `tools/tls_ja3_capture.py` captures ClientHello locally (stdlib only) and prints JA3 / JA3 hash
