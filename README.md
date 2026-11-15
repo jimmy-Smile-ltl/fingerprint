@@ -27,10 +27,12 @@
 
 ## ✨ 特性
 
-- **六大维度指纹采集**（`all_fp.js`）：Canvas（基础 + 高级）、WebGL（硬件参数 + 着色器像素）、
+- **六大核心维度**（`all_fp.js`）：Canvas（基础 + 高级）、WebGL（硬件参数 + 着色器像素）、
   Audio、字体、硬件、时区，浏览器与 Node.js 双环境通用
-- **可视化采集页面**（`test_fp.html`）：浏览器打开 → 自动采集 → 维度导航逐项查看 → 一键复制/下载报告
-- **维度导航 + 原理说明**：每个维度附一条技术原理；新增「指纹覆盖地图」，说明 L1–L6 分层
+- **23 个维度全面覆盖**：核心六维 + WebGL2/WebGPU、WebRTC、Client Hints、媒体/语音、
+  权限/存储、电池/传感器、编解码/DRM、CSS/DOM、JS 引擎、扩展字体/Canvas、自动化检测、行为采样
+- **可视化采集页面**（`test_fp.html`）：浏览器打开 → 自动采集 → 分组维度导航 → 一键复制/下载报告
+- **维度导航 + 原理说明**：每个维度附一条技术原理；「指纹覆盖地图」说明 L1–L6 分层与边界
 - **TLS / JA3 记录**：Workers 边缘 `/api/tls` 返回 TLS 版本/套件/HTTP 协议；本地
   `tools/tls_ja3_capture.py` 纯标准库捕获 ClientHello，输出 JA3 / JA3 hash
 - **原型链级补环境**（`fp_env_patch.js`）：`instanceof`、`toString`、getter 全对齐真实浏览器，
@@ -45,7 +47,8 @@
 
 ```
 fingerprint/
-├── all_fp.js                # 指纹采集函数（ES Module，浏览器 & Node 双环境）
+├── all_fp.js                # 核心指纹采集（ES Module，浏览器 & Node 双环境）
+├── supplemental_fp.js       # 扩展环境指纹（WebGL2/WebGPU/WebRTC/Client Hints/媒体/权限等）
 ├── fp_env_patch.js          # Node.js 补环境（Canvas/WebGL/Audio 原型链 + 注入通道）
 ├── fp_env_ruishu_plus.js    # 瑞数增强环境（研究示例，见免责声明）
 ├── test_fp.html             # 浏览器采集页面（维度导航 + 原理说明 + 报告导出）
@@ -138,6 +141,25 @@ const result = await fp.getFingerprint();
 | `updateFunToString` / `setNativeTag` / `defProp` | 原型链 / toString 伪装工具 |
 | `Window` / `Navigator` / `Document` / `HTMLCanvasElement` / `WebGLRenderingContext` / `OfflineAudioContext` … | 环境构造函数（供外部扩展） |
 
+### supplemental_fp.js（扩展指纹，浏览器专用）
+
+`collectSupplementalFingerprint()` 返回：
+
+| 字段 | 内容 |
+|------|------|
+| `clientHints` | UA-CH 品牌/平台/架构/版本 |
+| `webgl2` / `webgpu` | 图形上限、扩展、adapter 信息 |
+| `webrtc` | ICE 候选类型与地址 |
+| `mediaDevices` / `speech` | 媒体设备数量、TTS 语音列表 |
+| `permissionsStorage` / `batterySensors` | 权限、配额、电池、传感器、手柄 |
+| `codecsDrm` / `cssDom` / `jsEngine` | 编解码与 DRM、媒体查询、JS 引擎怪癖 |
+| `fontsExpanded` / `canvasExtra` | 94 候选字体、额外 Canvas 渲染 |
+| `automation` | webdriver / CDP / Headless 线索 |
+
+> 这些结果不进入 core `visitorId`；`test_fp.html` 将它们作为独立维度展示。复制报告会包含
+> `supplemental`；生成 Node 环境 JS 时只使用 core `components`（Node 侧没有这些浏览器 API）。
+> 行为采样在页面内完成，仅统计数量与速度，不记录按键内容或坐标明细。
+
 ## 📚 实际案例
 
 见 [`cases/`](cases/README.md)——案例库以**辅助理解**为定位，配套：
@@ -191,6 +213,30 @@ const result = await fp.getFingerprint();
 3. **逐维度补实现** — 每个指纹维度「真实数据优先，合成数据兜底」
 4. **toString 伪装** — `Function.prototype.toString` 劫持，返回 `[native code]`
 5. **验证** — 浏览器 vs Node 逐项对比（`test_fp_node.js`）
+
+## 🧩 扩展指纹覆盖（23 个维度）
+
+页面采集结果按三组展示；**扩展项不进入 core visitorId**，避免破坏浏览器 ↔ Node 的一致性。
+
+| 分组 | 维度 | 主要读数 |
+|------|------|---------|
+| 核心指纹 | Canvas / WebGL / Audio / 字体 / 硬件 / 时区 | 像素哈希、GPU 参数、波形采样、字体列表、CPU/RAM、IANA 时区 |
+| 扩展环境 | 环境补充 / Client Hints / WebGL2 / WebGPU | UA、屏幕、DPR、网络信息；UA-CH 高熵值；GPU 上限/adapter |
+| 扩展环境 | WebRTC / 媒体设备 / 语音合成 | ICE 候选与类型；摄像头/麦克风/扬声器数量；TTS 语音列表 |
+| 扩展环境 | 权限与存储 / 电池与传感器 | Permissions 状态、配额、localStorage；电量、传感器构造器、手柄 |
+| 扩展环境 | 编解码与 DRM / CSS·DOM / JS 引擎 | H.264/HEVC/AV1、Widevine/PlayReady；媒体查询、CSS.supports；Math/Intl/错误栈 |
+| 扩展环境 | 扩展字体 / 扩展 Canvas | 94 个候选字体的安装列表；渐变文字、emoji、混合模式、evenodd 画布 |
+| 对抗与行为 | 反指纹检测 / 自动化检测 | Farbling、WebGL 拦截、UA 精简；webdriver、CDP 标记、Headless UA |
+| 对抗与行为 | 行为采样 | 指针轨迹长度、平均/峰值速度、点击、按键、触摸、滚动（仅本地统计） |
+
+### 边界（不是“遗漏”，是采集位置不同）
+
+- **TLS / JA3 / JA4**：握手阶段信号，由 Workers 边缘 API 或本地 ClientHello 工具记录，不在浏览器环境层
+- **TTL / HTTP/2 帧 / DNS**：IP/TCP 或协议栈信号，需要抓包或自定义服务端；JS 读不到
+- **设备 SDK / App native / 滑块轨迹**：需要 SDK 逆向或行为采集，仓库用案例 06/09/16 说明
+- **WAF 挑战 / 签名参数**：属 L2/L4，仓库用案例文档而非在线采集器覆盖
+
+> 浏览器指纹是开放集合，不存在“绝对全面”。本项目的原则是：**能由浏览器读到的尽量采集并解释；读不到的明确标注边界和替代工具**。
 
 ## 🔐 TLS / JA3 记录
 

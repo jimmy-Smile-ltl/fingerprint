@@ -20,10 +20,11 @@ const dist = join(root, 'dist');
 rmSync(dist, { recursive: true, force: true, maxRetries: 3, retryDelay: 120 });
 mkdirSync(dist, { recursive: true });
 
-// The page and its ESM dependency.
+// The page and its ESM dependencies.
 cpSync(join(root, 'test_fp.html'), join(dist, 'index.html'));
 cpSync(join(root, 'test_fp.html'), join(dist, 'test_fp.html'));
 cpSync(join(root, 'all_fp.js'), join(dist, 'all_fp.js'));
+cpSync(join(root, 'supplemental_fp.js'), join(dist, 'supplemental_fp.js'));
 
 // Keep the demo self-contained: no esm.sh / CDN resolution at runtime.
 cpSync(join(root, 'vendor'), join(dist, 'vendor'), { recursive: true });
@@ -32,4 +33,4 @@ cpSync(join(root, 'vendor'), join(dist, 'vendor'), { recursive: true });
 cpSync(join(root, 'deploy', '_headers'), join(dist, '_headers'));
 
 console.log('[build-pages] dist/ ready');
-console.log('  index.html, test_fp.html, all_fp.js, vendor/, _headers');
+console.log('  index.html, test_fp.html, all_fp.js, supplemental_fp.js, vendor/, _headers');

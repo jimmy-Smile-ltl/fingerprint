@@ -149,13 +149,22 @@
     display: grid; grid-template-columns: 230px minmax(0,1fr);
     gap: 22px; align-items: start;
   }
-  .fp-nav { border-top: 1.5px solid var(--ink); position: sticky; top: 18px; min-width: 0; }
+  .fp-nav {
+    border-top: 1.5px solid var(--ink); position: sticky; top: 18px; min-width: 0;
+    max-height: calc(100vh - 36px); overflow-y: auto; scrollbar-width: thin;
+  }
   .fp-nav-head {
     display: flex; justify-content: space-between; gap: 8px;
     padding: 9px 2px; border-bottom: 1px solid var(--rule);
     font-size: 11px; letter-spacing: .06em; color: var(--ink-3);
   }
   .fp-nav-hint { color: var(--rule-2); }
+  .fp-nav-group-title {
+    padding: 10px 9px 4px; font-family: var(--mono); font-size: 10px;
+    letter-spacing: .08em; color: var(--ink-3);
+    border-bottom: 1px solid var(--rule-faint); background: var(--paper);
+  }
+  .fp-nav-group + .fp-nav-group .fp-nav-group-title { border-top: 1px solid var(--rule); }
   .fp-nav-item {
     display: grid; grid-template-columns: 8px minmax(0,1fr); gap: 2px 9px; align-items: center;
     width: 100%; padding: 10px 9px; border: 0;
@@ -170,6 +179,7 @@
   .fp-nav-swatch.audio  { background: var(--warn); }
   .fp-nav-swatch.system { background: var(--violet); }
   .fp-nav-swatch.detect { background: var(--bad); }
+  .fp-nav-swatch.behavior { background: var(--warn); }
   .fp-nav-label { font-size: 13px; font-weight: 700; color: var(--ink); }
   .fp-nav-summary {
     grid-column: 2; font-family: var(--mono); font-size: 11px; line-height: 1.4;
@@ -183,6 +193,7 @@
   .detail-bar.cat-audio  { background: var(--warn); }
   .detail-bar.cat-system { background: var(--violet); }
   .detail-bar.cat-detect { background: var(--bad); }
+  .detail-bar.cat-behavior { background: var(--warn); }
   .detail-inner { padding: 18px 22px 22px; }
   .detail-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
   .detail-count { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
@@ -273,6 +284,8 @@
   .tag.audio  { color: var(--warn); }
   .tag.system { color: var(--violet); }
   .tag.detect { color: var(--bad); }
+  .tag.behavior { color: var(--warn); }
+  .behavior-actions { margin-top: 14px; }
 
   /* ===== Coverage map ===== */
   .coverage { max-width: 1040px; }
@@ -281,6 +294,11 @@
     font-weight: 600; letter-spacing: -.01em; margin: 0 0 10px;
   }
   .coverage-head p { max-width: 76ch; font-size: 14.5px; line-height: 1.75; color: var(--ink-2); }
+  .coverage-legend {
+    margin-top: 10px; font-family: var(--mono); font-size: 11px;
+    color: var(--ink-3); letter-spacing: .02em;
+  }
+  .coverage-legend span { display: inline-block; padding: 1px 6px; border: 1px solid currentColor; margin-right: 4px; }
   .layer-map { margin: 22px 0 20px; border-top: 1.5px solid var(--ink); }
   .layer-row {
     display: grid; grid-template-columns: 34px 82px minmax(0,1fr) auto;
@@ -426,9 +444,11 @@
   }
   @media (max-width: 1000px) {
     .results-shell { grid-template-columns: 1fr; }
-    .fp-nav { position: static; }
+    .fp-nav { position: static; max-height: none; overflow: visible; }
     #fp-nav-items { display: flex; overflow-x: auto; scrollbar-width: none; }
     #fp-nav-items::-webkit-scrollbar { display: none; }
+    .fp-nav-group { display: flex; flex: 0 0 auto; }
+    .fp-nav-group-title { display: none; }
     .fp-nav-item { flex: 0 0 auto; width: auto; min-width: 132px; border-bottom: 1px solid var(--rule); }
     .fp-nav-item.active { box-shadow: none; border-bottom-color: var(--accent); }
     .fp-nav-summary { white-space: nowrap; }
@@ -502,7 +522,7 @@
     <div class="masthead-main">
       <div>
         <h1>浏览器指纹实验室</h1>
-        <p class="lede">一次采集，读取 Canvas、WebGL、Audio、字体、硬件与时区六个指纹维度，并补充环境一致性与反指纹检测。全部计算在本地完成。</p>
+        <p class="lede">一次采集，覆盖核心六维，以及 WebGL2/WebGPU、WebRTC、Client Hints、媒体与权限、编解码、自动化检测和行为采样等 23 个维度。全部计算在本地完成。</p>
       </div>
       <div class="stamp">仅本地运行<br>数据不上传</div>
     </div>
@@ -569,7 +589,7 @@
   <div id="tab-collect-content">
     <div class="results-shell">
       <nav class="fp-nav" id="fp-nav" aria-label="指纹维度导航">
-        <div class="fp-nav-head"><span>指纹维度</span><span class="fp-nav-hint">点击切换</span></div>
+        <div class="fp-nav-head"><span>指纹维度</span><span class="fp-nav-hint">点击切换 · 可滚动</span></div>
         <div id="fp-nav-items"></div>
       </nav>
       <section class="fp-detail" id="fp-detail" aria-live="polite">
@@ -586,7 +606,8 @@
     <div class="coverage">
       <div class="coverage-head">
         <h2>指纹覆盖地图</h2>
-        <p>本页聚焦浏览器可读的环境层。TLS 握手发生在更底层，已由「TLS / JA3」面板通过 Workers 边缘元数据或本地 ClientHello 工具记录；TTL 仍需抓包。行为、设备 SDK 与 App 侧信号属于另外两层，仓库用案例文档覆盖。</p>
+        <p>本页已覆盖 L3 环境层的大部分浏览器可读信号，并新增 L5 行为采样与 L1 TLS 边缘记录。TLS/JA3 通过 Workers 边缘元数据或本地 ClientHello 工具记录；TTL、HTTP/2 帧、设备 SDK 与 App 侧信号需要抓包或 native 工具，仓库用案例文档说明。</p>
+        <p class="coverage-legend"><span class="flag-page">本页</span> 实时采集　<span class="flag-js">边界</span> 需边缘/抓包　<span class="flag-case">案例</span> 文档或脚本</p>
       </div>
 
       <div class="layer-map" aria-label="反爬分层与覆盖情况">
@@ -602,7 +623,7 @@
         </div>
         <div class="layer-row is-current">
           <span class="layer-id">L3</span><span class="layer-name">环境层</span>
-          <span class="layer-desc">Canvas · WebGL · Audio · 字体 · 硬件 · 时区</span>
+          <span class="layer-desc">Canvas · WebGL2/WebGPU · Audio · 字体 · 硬件 · 时区 · Client Hints · WebRTC · 媒体/权限/编解码</span>
           <span class="layer-flag flag-page">本页覆盖</span>
         </div>
         <div class="layer-row">
@@ -612,8 +633,8 @@
         </div>
         <div class="layer-row">
           <span class="layer-id">L5</span><span class="layer-name">行为层</span>
-          <span class="layer-desc">鼠标轨迹 · 键击 · 滑块 · 设备 SDK</span>
-          <span class="layer-flag flag-case">案例 06/09</span>
+          <span class="layer-desc">鼠标轨迹（本页采样）· 键击 · 滑块 · 设备 SDK</span>
+          <span class="layer-flag flag-page">行为采样 + 案例 06/09</span>
         </div>
         <div class="layer-row">
           <span class="layer-id">L6</span><span class="layer-name">合规层</span>
@@ -624,36 +645,38 @@
 
       <div class="coverage-grid">
         <section class="cov-card">
-          <h3>本页实时采集</h3>
+          <h3>核心指纹 · 本页实时</h3>
           <ul>
             <li>Canvas 像素与稳定性</li>
             <li>WebGL GPU 参数与着色器像素</li>
             <li>Audio 波形采样</li>
-            <li>字体安装列表</li>
+            <li>字体安装列表（16 候选）</li>
             <li>硬件：CPU / 内存 / 触点数 / 平台</li>
             <li>时区与语言</li>
-            <li>UA / 屏幕 / DPR 环境补充</li>
+            <li>UA / 屏幕 / DPR / 网络信息</li>
             <li>Farbling / WebGL 拦截 / UA 精简检测</li>
           </ul>
         </section>
         <section class="cov-card">
-          <h3>浏览器可采 · 待扩展</h3>
+          <h3>扩展环境 · 本页实时</h3>
           <ul>
-            <li>WebRTC 候选地址（本地 IP 泄露）</li>
-            <li>媒体设备 / 语音列表</li>
-            <li>Network Information（RTT / downlink）</li>
-            <li>Permissions / Storage / 电池</li>
-            <li>传感器与 CSS 媒体查询</li>
+            <li>Client Hints · WebGL2 · WebGPU</li>
+            <li>WebRTC ICE · 媒体设备 · 语音合成</li>
+            <li>权限 / 存储 / 电池 / 传感器 / 手柄</li>
+            <li>编解码 · Widevine / PlayReady</li>
+            <li>CSS 媒体查询 · JS 引擎怪癖</li>
+            <li>扩展字体（94 候选）· 扩展 Canvas</li>
+            <li>自动化检测（webdriver / CDP / Headless）</li>
+            <li>行为采样（轨迹 / 速度 / 点击 / 键击）</li>
           </ul>
-          <p class="cov-links"><a href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/10_webrtc" target="_blank" rel="noopener">WebRTC 案例 10</a></p>
         </section>
         <section class="cov-card">
           <h3>网络与传输 · 边缘 / 本地</h3>
           <ul>
-            <li>TLS / JA3 / JA4 握手指纹</li>
-            <li>HTTP/2 帧与优先级指纹</li>
-            <li>TCP/IP TTL、窗口大小</li>
-            <li>DNS 与代理链路</li>
+            <li>TLS 版本 / 套件 / HTTP 协议 · 边缘已记录</li>
+            <li>JA3 / JA3 hash · 本地 ClientHello 工具</li>
+            <li>JA4 · 需 Cloudflare Bot Management</li>
+            <li>HTTP/2 帧 / TCP TTL / DNS · 需抓包</li>
           </ul>
           <p class="cov-links">
             <a href="#" onclick="switchTab('tls');return false;">TLS / JA3 面板</a>
@@ -664,10 +687,11 @@
         <section class="cov-card">
           <h3>行为 / 设备 / 自动化</h3>
           <ul>
-            <li>鼠标轨迹、键击节奏、滑块轨迹</li>
-            <li>数美 / 顶象 / 极验设备指纹 SDK</li>
-            <li>webdriver、CDP 暴露、stealth 对抗</li>
-            <li>App 侧 native 签名与设备信息</li>
+            <li>鼠标轨迹、速度、点击/键击 · 本页行为采样</li>
+            <li>webdriver / CDP / Headless · 本页自动化检测</li>
+            <li>滑块轨迹 · 案例 09</li>
+            <li>数美 / 顶象 / 极验设备 SDK · 案例 06</li>
+            <li>App 侧 native 签名与设备信息 · 案例 16</li>
           </ul>
           <p class="cov-links">
             <a href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/06_device_sdk" target="_blank" rel="noopener">设备 SDK 06</a>
@@ -1271,6 +1295,7 @@ import {
   detectCanvasFarbling, detectWebGLInterception, detectUAReduction,
   BrowserFingerprinter
 } from './all_fp.js';
+import { collectSupplementalFingerprint } from './supplemental_fp.js';
 
 Object.assign(window, {
   _m: { getCanvasFingerprint, getCanvasFingerprintAdvanced, getWebGLFingerprint,
@@ -1381,12 +1406,28 @@ function renderDims(dims, activeId) {
   if (!dims.length) return;
   window._dims = dims;
   const nav = $('fp-nav-items');
-  nav.innerHTML = dims.map(function(dim) {
+  const groups = [];
+  dims.forEach(function(dim) {
+    const name = dim.group || '指纹';
+    let group = groups.find(function(item) { return item.name === name; });
+    if (!group) {
+      group = { name: name, items: [] };
+      groups.push(group);
+    }
+    group.items.push(dim);
+  });
+  const itemHtml = function(dim) {
     return `<button type="button" class="fp-nav-item" data-id="${escapeHtml(dim.id)}" onclick="showDim('${escapeHtml(dim.id)}')">
       <span class="fp-nav-swatch ${dim.cat}" aria-hidden="true"></span>
       <span class="fp-nav-label">${escapeHtml(dim.label)}</span>
       <span class="fp-nav-summary">${escapeHtml(dim.summary || '')}</span>
     </button>`;
+  };
+  nav.innerHTML = groups.map(function(group) {
+    return `<div class="fp-nav-group">
+      <div class="fp-nav-group-title">${escapeHtml(group.name)}</div>
+      ${group.items.map(itemHtml).join('')}
+    </div>`;
   }).join('');
   const target = activeId && dims.some(function(dim) { return dim.id === activeId; })
     ? activeId : dims[0].id;
@@ -1400,7 +1441,7 @@ function shortHash(hash) {
 function makeCanvasDim(c) {
   const raw = (c.canvas && c.canvas.rawData) || '';
   return {
-    id: 'canvas', label: 'Canvas', tag: 'Canvas', cat: 'canvas',
+    id: 'canvas', group: '核心指纹', label: 'Canvas', tag: 'Canvas', cat: 'canvas',
     summary: shortHash(c.canvas && c.canvas.hash),
     principle: '不同系统的字体渲染、抗锯齿与颜色空间不同，同一条绘制指令的 toDataURL 结果会在字节级产生差异。',
     rows: [
@@ -1432,7 +1473,7 @@ function makeWebglDim(c) {
     note = '0,0,0,0 是 readPixels 读到的有效 RGBA 值，不是空数据；不同 GPU 的浮点精度会体现为不同的 4 字节结果。';
   }
   return {
-    id: 'webgl', label: 'WebGL', tag: 'WebGL', cat: 'webgl',
+    id: 'webgl', group: '核心指纹', label: 'WebGL', tag: 'WebGL', cat: 'webgl',
     summary: params.unmaskedVendor || params.vendor || (basic ? 'WebGL 可用' : '不可用'),
     principle: 'GPU 型号、驱动版本与着色器浮点精度不同；getParameter 暴露硬件上限，readPixels 读回的像素也略有差异。',
     note: note,
@@ -1459,7 +1500,7 @@ function makeAudioDim(c) {
   const audio = c.audio || {};
   const raw = audio.rawData || '';
   return {
-    id: 'audio', label: 'Audio', tag: 'Audio', cat: 'audio',
+    id: 'audio', group: '核心指纹', label: 'Audio', tag: 'Audio', cat: 'audio',
     summary: shortHash(audio.hash),
     principle: '音频栈（WASAPI / CoreAudio / ALSA）与浮点实现不同，振荡器经压缩器渲染后的波形采样值会在小数位上产生差异。',
     rows: [
@@ -1475,7 +1516,7 @@ function makeAudioDim(c) {
 function makeFontDim(c) {
   const list = c.fonts ? c.fonts.split(',').filter(Boolean) : [];
   return {
-    id: 'fonts', label: '字体', tag: 'System', cat: 'system',
+    id: 'fonts', group: '核心指纹', label: '字体', tag: 'System', cat: 'system',
     summary: list.length + ' 个字体',
     principle: '操作系统预装字体集合不同；用同一字符串在不同字体下测量宽度，可以推断字体是否已安装。',
     rows: [
@@ -1490,7 +1531,7 @@ function makeFontDim(c) {
 function makeHardwareDim(c) {
   const hw = c.hardware || {};
   return {
-    id: 'hardware', label: '硬件', tag: 'System', cat: 'system',
+    id: 'hardware', group: '核心指纹', label: '硬件', tag: 'System', cat: 'system',
     summary: (hw.platform || '—') + ' · ' + (hw.hardwareConcurrency || '—') + ' 核',
     principle: 'CPU 核心数、内存、触点数与平台由浏览器暴露；单值熵低，组合后用于辅助区分设备。',
     rows: [
@@ -1509,7 +1550,7 @@ function makeEnvironmentDim() {
     ? (navigator.connection || navigator.mozConnection || navigator.webkitConnection)
     : null;
   return {
-    id: 'environment', label: '环境补充', tag: 'Env', cat: 'system',
+    id: 'environment', group: '扩展环境', label: '环境补充', tag: 'Env', cat: 'system',
     summary: width + '×' + height,
     principle: 'UA、屏幕、DPR、语言与浏览器暴露的网络信息是最基础的环境信号，常与 Canvas/WebGL 指纹交叉校验。',
     note: '展示项：这些字段当前不参与 Visitor ID 计算，仅用于环境一致性检查。',
@@ -1533,7 +1574,7 @@ function makeEnvironmentDim() {
 function makeTimezoneDim(c) {
   const tz = c.timezone || {};
   return {
-    id: 'timezone', label: '时区', tag: 'System', cat: 'system',
+    id: 'timezone', group: '核心指纹', label: '时区', tag: 'System', cat: 'system',
     summary: tz.timezone || '—',
     principle: 'IANA 时区、UTC 偏移与语言列表反映系统配置，常与 IP 地理位置和语言偏好交叉校验。',
     rows: [
@@ -1550,7 +1591,7 @@ function makeDetectDim(c) {
   const wi = c.webglInterception || {};
   const ua = c.uaReduction || {};
   return {
-    id: 'detect', label: '反指纹检测', tag: 'Detect', cat: 'detect',
+    id: 'detect', group: '对抗与行为', label: '反指纹检测', tag: 'Detect', cat: 'detect',
     summary: (fb ? 'Farbling' : '无噪声') + ' · ' + (wi.debugInfoBlocked ? '拦截' : '可读'),
     principle: '检测浏览器是否启用 Farbling 噪声、WebGL 调试信息拦截与 UA 精简；这些特征本身也会进入风控打分。',
     two: true,
@@ -1565,6 +1606,382 @@ function makeDetectDim(c) {
     ]
   };
 }
+
+function yesNo(value) {
+  return value ? '是' : '否';
+}
+
+function fmtBytes(value) {
+  if (value == null || Number.isNaN(Number(value))) return '—';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let n = Number(value), i = 0;
+  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+  return (Math.round(n * 100) / 100) + ' ' + units[i];
+}
+
+function makeSupplementalDims(s) {
+  const dims = [];
+
+  // Client Hints
+  dims.push({
+    id: 'client-hints', group: '扩展环境', label: 'Client Hints', tag: 'Env', cat: 'system',
+    summary: s.clientHints && s.clientHints.available ? (s.clientHints.platform || '可用') : '不可用',
+    principle: 'UA-CH 把 UA 拆成品牌、平台、架构、位宽等高熵字段；比 UA 字符串更稳定，也更适合组合成设备画像。',
+    rows: s.clientHints && s.clientHints.available ? [
+      {k:'品牌', v:s.clientHints.brands || '—'},
+      {k:'平台', v:s.clientHints.platform || '—'},
+      {k:'移动端', v:yesNo(s.clientHints.mobile)},
+      {k:'架构', v:s.clientHints.architecture || '—'},
+      {k:'位宽', v:s.clientHints.bitness || '—'},
+      {k:'平台版本', v:s.clientHints.platformVersion || '—'},
+      {k:'完整版本', v:s.clientHints.uaFullVersion || '—'},
+      {k:'WOW64', v:s.clientHints.wow64 == null ? '—' : yesNo(s.clientHints.wow64)}
+    ] : [{k:'状态', v:'不可用（浏览器不支持 userAgentData）', w:1}],
+    extra: s.clientHints && s.clientHints.fullVersionList && s.clientHints.fullVersionList.length
+      ? `<div class="font-chips">${s.clientHints.fullVersionList.map(function(v){return `<span class="font-chip">${escapeHtml(v)}</span>`;}).join('')}</div>` : ''
+  });
+
+  // WebGL2
+  dims.push({
+    id: 'webgl2', group: '扩展环境', label: 'WebGL2', tag: 'WebGL2', cat: 'webgl',
+    summary: s.webgl2 && s.webgl2.available ? (s.webgl2.unmaskedRenderer || s.webgl2.renderer || '可用') : '不可用',
+    principle: 'WebGL2 暴露比 WebGL1 更多的硬件上限与扩展；同一 GPU 型号在不同驱动下也可能不同。',
+    rows: s.webgl2 && s.webgl2.available ? [
+      {k:'Vendor', v:s.webgl2.vendor || '—'},
+      {k:'Renderer', v:s.webgl2.renderer || '—'},
+      {k:'真实厂商', v:s.webgl2.unmaskedVendor || '—', h:!!s.webgl2.unmaskedVendor},
+      {k:'真实型号', v:s.webgl2.unmaskedRenderer || '—', h:!!s.webgl2.unmaskedRenderer},
+      {k:'版本', v:s.webgl2.version || '—'},
+      {k:'GLSL', v:s.webgl2.shadingLanguageVersion || '—'},
+      {k:'最大纹理', v:s.webgl2.maxTextureSize},
+      {k:'最大 3D 纹理', v:s.webgl2.max3DTextureSize},
+      {k:'数组纹理层', v:s.webgl2.maxArrayTextureLayers},
+      {k:'颜色附件', v:s.webgl2.maxColorAttachments},
+      {k:'MSAA 采样', v:s.webgl2.maxSamples},
+      {k:'扩展数量', v:s.webgl2.extensionCount}
+    ] : [{k:'状态', v:'不可用（浏览器未提供 WebGL2）', w:1}]
+  });
+
+  // WebGPU
+  dims.push({
+    id: 'webgpu', group: '扩展环境', label: 'WebGPU', tag: 'WebGPU', cat: 'webgl',
+    summary: s.webgpu && s.webgpu.adapter ? (s.webgpu.vendor || 'adapter 可用') : (s.webgpu && s.webgpu.available ? '无 adapter' : '不可用'),
+    principle: 'WebGPU 暴露 GPU adapter 的厂商、架构、特性与限制；是 WebGL 之外更现代的图形能力指纹。',
+    rows: s.webgpu && s.webgpu.available ? [
+      {k:'adapter', v:s.webgpu.adapter ? '可用' : '未返回', g:!!s.webgpu.adapter, w:!s.webgpu.adapter},
+      {k:'厂商', v:s.webgpu.vendor || '—'},
+      {k:'架构', v:s.webgpu.architecture || '—'},
+      {k:'设备', v:s.webgpu.device || '—'},
+      {k:'描述', v:s.webgpu.description || '—'},
+      {k:'特性数量', v:s.webgpu.featureCount},
+      {k:'最大纹理 2D', v:s.webgpu.maxTextureDimension2D || '—'},
+      {k:'最大 Buffer', v:fmtBytes(s.webgpu.maxBufferSize)},
+      {k:'Workgroup X', v:s.webgpu.maxComputeWorkgroupSizeX || '—'}
+    ] : [{k:'状态', v:'不可用（浏览器不支持 WebGPU）', w:1}],
+    extra: s.webgpu && s.webgpu.features && s.webgpu.features.length
+      ? `<div class="font-chips">${s.webgpu.features.map(function(v){return `<span class="font-chip">${escapeHtml(v)}</span>`;}).join('')}</div>` : ''
+  });
+
+  // WebRTC
+  dims.push({
+    id: 'webrtc', group: '扩展环境', label: 'WebRTC', tag: 'WebRTC', cat: 'system',
+    summary: s.webrtc && s.webrtc.available ? (s.webrtc.count + ' 个 ICE 候选') : '不可用',
+    principle: 'ICE 候选会暴露本地网络、容器地址或 mDNS 名称；在代理/VPN 场景中常用于交叉验证真实网络环境。',
+    note: '本页只使用空 STUN 配置，不连接外部服务器；候选地址仅在本地展示。',
+    rows: s.webrtc && s.webrtc.available ? [
+      {k:'候选数量', v:s.webrtc.count},
+      {k:'候选类型', v:Object.keys(s.webrtc.types || {}).map(function(k){return k + '×' + s.webrtc.types[k];}).join(', ') || '—'},
+      {k:'错误', v:s.webrtc.error || '—', w:!!s.webrtc.error}
+    ] : [{k:'状态', v:'不可用（浏览器不支持 RTCPeerConnection）', w:1}],
+    extra: s.webrtc && s.webrtc.candidates && s.webrtc.candidates.length
+      ? `<div class="font-chips">${s.webrtc.candidates.map(function(c){return `<span class="font-chip">${escapeHtml(c.type || '?')} · ${escapeHtml(c.address || '?')}:${escapeHtml(c.port || '?')}</span>`;}).join('')}</div>` : ''
+  });
+
+  // Media devices
+  const mediaCounts = (s.mediaDevices && s.mediaDevices.counts) || {};
+  dims.push({
+    id: 'media', group: '扩展环境', label: '媒体设备', tag: 'Media', cat: 'system',
+    summary: s.mediaDevices && s.mediaDevices.available ? ((s.mediaDevices.total || 0) + ' 个设备') : '不可用',
+    principle: '摄像头、麦克风、扬声器的数量与类型反映外设配置；设备标签通常需要用户授权后才能读取。',
+    rows: s.mediaDevices && s.mediaDevices.available ? [
+      {k:'设备总数', v:s.mediaDevices.total || 0},
+      {k:'音频输入', v:mediaCounts.audioinput || 0},
+      {k:'音频输出', v:mediaCounts.audiooutput || 0},
+      {k:'视频输入', v:mediaCounts.videoinput || 0},
+      {k:'可读标签', v:(s.mediaDevices.labelCount || 0) + ' 个'}
+    ] : [{k:'状态', v:'不可用（非安全上下文或 API 不支持）', w:1}],
+    extra: s.mediaDevices && s.mediaDevices.labels && s.mediaDevices.labels.length
+      ? `<div class="font-chips">${s.mediaDevices.labels.map(function(v){return `<span class="font-chip">${escapeHtml(v)}</span>`;}).join('')}</div>` : ''
+  });
+
+  // Speech synthesis
+  dims.push({
+    id: 'speech', group: '扩展环境', label: '语音合成', tag: 'Voice', cat: 'system',
+    summary: s.speech && s.speech.available ? ((s.speech.count || 0) + ' 个语音') : '不可用',
+    principle: 'TTS 语音列表由操作系统与浏览器共同决定；语音名称、语言和本地/在线属性可以区分平台。',
+    rows: s.speech && s.speech.available ? [
+      {k:'语音数量', v:s.speech.count || 0},
+      {k:'本地语音', v:s.speech.localCount || 0},
+      {k:'语言数量', v:(s.speech.languages || []).length},
+      {k:'语言', v:(s.speech.languages || []).slice(0, 10).join(', ') || '—'}
+    ] : [{k:'状态', v:'不可用（浏览器不支持 speechSynthesis）', w:1}],
+    extra: s.speech && s.speech.sample && s.speech.sample.length
+      ? `<div class="font-chips">${s.speech.sample.map(function(v){return `<span class="font-chip">${escapeHtml(v)}</span>`;}).join('')}</div>` : ''
+  });
+
+  // Permissions + storage
+  const perms = (s.permissionsStorage && s.permissionsStorage.permissions) || {};
+  const permissionKeys = Object.keys(perms);
+  dims.push({
+    id: 'permissions', group: '扩展环境', label: '权限与存储', tag: 'Perm', cat: 'system',
+    summary: s.permissionsStorage && s.permissionsStorage.available
+      ? ((s.permissionsStorage.localStorage ? '存储可用' : '存储受限') + ' · ' + permissionKeys.length + ' 项权限')
+      : '不可用',
+    principle: '权限状态、存储配额与可用性反映浏览器隐私设置；某些权限组合在设备之间有明显差异。',
+    two: permissionKeys.length > 4,
+    rows: s.permissionsStorage && s.permissionsStorage.available ? [
+      ...permissionKeys.map(function(k){return {k:k, v:perms[k]};}),
+      {k:'localStorage', v:yesNo(s.permissionsStorage.localStorage), g:s.permissionsStorage.localStorage, w:!s.permissionsStorage.localStorage},
+      {k:'sessionStorage', v:yesNo(s.permissionsStorage.sessionStorage), g:s.permissionsStorage.sessionStorage},
+      {k:'IndexedDB', v:yesNo(s.permissionsStorage.indexedDB)},
+      {k:'Cookie', v:yesNo(s.permissionsStorage.cookieEnabled)},
+      {k:'存储配额', v:fmtBytes(s.permissionsStorage.quota)},
+      {k:'已用空间', v:fmtBytes(s.permissionsStorage.usage)}
+    ] : [{k:'状态', v:'不可用', w:1}]
+  });
+
+  // Battery + sensors
+  const battery = (s.batterySensors && s.batterySensors.battery) || null;
+  const sensorNames = s.batterySensors && s.batterySensors.sensors
+    ? Object.keys(s.batterySensors.sensors).filter(function(k){return s.batterySensors.sensors[k];}) : [];
+  dims.push({
+    id: 'battery', group: '扩展环境', label: '电池与传感器', tag: 'Device', cat: 'system',
+    summary: battery ? ('电量 ' + Math.round((battery.level || 0) * 100) + '%') : (sensorNames.length + ' 类传感器'),
+    principle: '电池状态、传感器构造器与游戏手柄数量补充硬件画像；多数信号需要用户交互或权限。',
+    rows: s.batterySensors && s.batterySensors.available ? [
+      {k:'电池 API', v:battery ? '可用' : '不可用', g:!!battery, w:!battery},
+      {k:'充电中', v:battery ? yesNo(battery.charging) : '—'},
+      {k:'电量', v:battery ? (Math.round(battery.level * 100) + '%') : '—'},
+      {k:'充电时间', v:battery && battery.chargingTime != null ? battery.chargingTime + ' s' : '—'},
+      {k:'放电时间', v:battery && battery.dischargingTime != null ? battery.dischargingTime + ' s' : '—'},
+      {k:'传感器', v:sensorNames.length ? sensorNames.join(', ') : '—'},
+      {k:'游戏手柄', v:s.batterySensors.gamepads == null ? '—' : s.batterySensors.gamepads},
+      {k:'触摸点', v:s.batterySensors.maxTouchPoints == null ? '—' : s.batterySensors.maxTouchPoints}
+    ] : [{k:'状态', v:'不可用', w:1}]
+  });
+
+  // Codecs + DRM
+  const videoSupport = (s.codecsDrm && s.codecsDrm.video) || {};
+  const audioSupport = (s.codecsDrm && s.codecsDrm.audio) || {};
+  dims.push({
+    id: 'codecs', group: '扩展环境', label: '编解码与 DRM', tag: 'Codec', cat: 'system',
+    summary: s.codecsDrm && s.codecsDrm.available
+      ? (Object.values(videoSupport).filter(function(v){return v !== 'no';}).length + ' 种视频编码')
+      : '不可用',
+    principle: '浏览器支持的编解码器与 DRM 模块由平台/版本决定；Widevine、PlayReady 等可辅助区分设备类型。',
+    two: true,
+    rows: s.codecsDrm && s.codecsDrm.available ? [
+      ...Object.keys(videoSupport).map(function(k){return {k:'视频 · ' + k, v:videoSupport[k] || 'no'};}),
+      ...Object.keys(audioSupport).map(function(k){return {k:'音频 · ' + k, v:audioSupport[k] || 'no'};}),
+      {k:'EME API', v:yesNo(s.codecsDrm.eme)},
+      {k:'Widevine', v:yesNo(s.codecsDrm.widevine), g:!!s.codecsDrm.widevine, w:!s.codecsDrm.widevine},
+      {k:'PlayReady', v:yesNo(s.codecsDrm.playready)}
+    ] : [{k:'状态', v:'不可用', w:1}]
+  });
+
+  // CSS / DOM
+  const media = (s.cssDom && s.cssDom.media) || {};
+  const supports = (s.cssDom && s.cssDom.supports) || {};
+  dims.push({
+    id: 'css', group: '扩展环境', label: 'CSS / DOM', tag: 'CSS', cat: 'system',
+    summary: s.cssDom && s.cssDom.available ? (s.cssDom.screen + ' · DPR ' + s.cssDom.dpr) : '不可用',
+    principle: '媒体查询与 CSS.supports 反映渲染引擎、显示能力与用户偏好（深色模式、动态范围、指针类型）。',
+    two: true,
+    rows: s.cssDom && s.cssDom.available ? [
+      ...Object.keys(media).map(function(k){return {k:k, v:media[k] == null ? '—' : yesNo(media[k])};}),
+      ...Object.keys(supports).map(function(k){return {k:k, v:supports[k] == null ? '—' : yesNo(supports[k])};})
+    ] : [{k:'状态', v:'不可用', w:1}]
+  });
+
+  // JS engine
+  const math = (s.jsEngine && s.jsEngine.math) || {};
+  const intl = (s.jsEngine && s.jsEngine.intl) || {};
+  dims.push({
+    id: 'js-engine', group: '扩展环境', label: 'JS 引擎', tag: 'JS', cat: 'system',
+    summary: s.jsEngine && s.jsEngine.available ? (intl.locale || '可用') : '不可用',
+    principle: 'Math/Date/Intl 的边界行为与错误栈格式由 JS 引擎实现决定，可区分浏览器/运行时版本。',
+    rows: s.jsEngine && s.jsEngine.available ? [
+      ...Object.keys(math).map(function(k){return {k:'Math.' + k, v:String(math[k])};}),
+      {k:'Intl locale', v:intl.locale || '—'},
+      {k:'Intl timeZone', v:intl.timeZone || '—'},
+      {k:'calendar', v:intl.calendar || '—'},
+      {k:'numbering', v:intl.numberingSystem || '—'},
+      {k:'native Math.max', v:(s.jsEngine.nativeMax || '').slice(0, 60)}
+    ] : [{k:'状态', v:'不可用', w:1}],
+    extra: s.jsEngine && s.jsEngine.errorStack
+      ? `<div class="data-block"><div class="data-block-head">错误栈首行</div><pre>${escapeHtml(s.jsEngine.errorStack)}</pre></div>` : ''
+  });
+
+  // Expanded fonts
+  dims.push({
+    id: 'fonts-expanded', group: '扩展环境', label: '扩展字体', tag: 'Fonts', cat: 'canvas',
+    summary: s.fontsExpanded && s.fontsExpanded.available ? ((s.fontsExpanded.installedCount || 0) + ' / ' + (s.fontsExpanded.candidateCount || 0)) : '不可用',
+    principle: '在核心 16 字体列表之外扩大候选集，覆盖 Windows/macOS/Linux 预装字体与 Office/Adobe 字体。',
+    rows: s.fontsExpanded && s.fontsExpanded.available ? [
+      {k:'候选字体', v:s.fontsExpanded.candidateCount},
+      {k:'已安装', v:s.fontsExpanded.installedCount + ' 个'}
+    ] : [{k:'状态', v:'不可用', w:1}],
+    extra: s.fontsExpanded && s.fontsExpanded.installed && s.fontsExpanded.installed.length
+      ? `<div class="font-chips">${s.fontsExpanded.installed.map(function(v){return `<span class="font-chip">${escapeHtml(v)}</span>`;}).join('')}</div>` : ''
+  });
+
+  // Extra canvas renders
+  dims.push({
+    id: 'canvas-extra', group: '扩展环境', label: '扩展 Canvas', tag: 'Canvas', cat: 'canvas',
+    summary: s.canvasExtra && s.canvasExtra.available ? shortHash(s.canvasExtra.text && s.canvasExtra.text.hash) : '不可用',
+    principle: '增加渐变文字、emoji、混合模式与 evenodd 路径等独立画布测试，扩大渲染差异的覆盖。',
+    two: true,
+    rows: s.canvasExtra && s.canvasExtra.available ? [
+      {k:'文字/渐变哈希', v:s.canvasExtra.text ? s.canvasExtra.text.hash : '—', h:1},
+      {k:'文字稳定', v:s.canvasExtra.text ? yesNo(s.canvasExtra.text.stable) : '—'},
+      {k:'形状/混合哈希', v:s.canvasExtra.shapes ? s.canvasExtra.shapes.hash : '—', h:1},
+      {k:'形状稳定', v:s.canvasExtra.shapes ? yesNo(s.canvasExtra.shapes.stable) : '—'},
+      ...Object.keys(s.canvasExtra.metrics || {}).map(function(k){return {k:'宽度 ' + k, v:String(s.canvasExtra.metrics[k])};})
+    ] : [{k:'状态', v:'不可用', w:1}]
+  });
+
+  // Automation
+  dims.push({
+    id: 'automation', group: '对抗与行为', label: '自动化检测', tag: 'Auto', cat: 'detect',
+    summary: s.automation && s.automation.available ? ('webdriver: ' + yesNo(s.automation.webdriver)) : '不可用',
+    principle: 'webdriver 标记、CDP/Selenium 注入痕迹、Headless UA、插件与焦点状态是常见的自动化环境线索。',
+    two: true,
+    rows: s.automation && s.automation.available ? [
+      {k:'navigator.webdriver', v:yesNo(s.automation.webdriver), w:s.automation.webdriver, g:!s.automation.webdriver},
+      {k:'Headless UA', v:yesNo(s.automation.headlessUA), w:s.automation.headlessUA},
+      {k:'window.chrome', v:yesNo(s.automation.chromeObject)},
+      {k:'插件数量', v:s.automation.pluginCount == null ? '—' : s.automation.pluginCount},
+      {k:'语言数量', v:s.automation.languageCount == null ? '—' : s.automation.languageCount},
+      {k:'通知权限', v:s.automation.notificationPermission},
+      {k:'窗口尺寸', v:s.automation.windowSize},
+      {k:'页面焦点', v:s.automation.hasFocus == null ? '—' : yesNo(s.automation.hasFocus)},
+      {k:'注入标记', v:(s.automation.markers || []).join(', ') || '未发现'},
+      {k:'CDC 标记', v:(s.automation.cdcMarkers || []).join(', ') || '未发现'}
+    ] : [{k:'状态', v:'不可用', w:1}]
+  });
+
+  return dims;
+}
+
+// ---------------------------------------------------------------------------
+// Behavior sampling (L5): local-only counts and timing; no key/coordinate logs.
+// ---------------------------------------------------------------------------
+const behaviorStats = {
+  active: false, start: 0, lastDuration: 0,
+  pointerEvents: 0, pathLength: 0, maxSpeed: 0,
+  lastX: null, lastY: null, lastT: 0,
+  clicks: 0, keys: 0, touches: 0, scrolls: 0, wheels: 0, visibility: 0
+};
+
+function resetBehaviorStats() {
+  behaviorStats.pointerEvents = 0;
+  behaviorStats.pathLength = 0;
+  behaviorStats.maxSpeed = 0;
+  behaviorStats.lastX = null;
+  behaviorStats.lastY = null;
+  behaviorStats.lastT = 0;
+  behaviorStats.clicks = 0;
+  behaviorStats.keys = 0;
+  behaviorStats.touches = 0;
+  behaviorStats.scrolls = 0;
+  behaviorStats.wheels = 0;
+  behaviorStats.visibility = 0;
+}
+
+window.addEventListener('pointermove', function(event) {
+  if (!behaviorStats.active) return;
+  const now = performance.now();
+  if (behaviorStats.lastX != null) {
+    const dx = event.clientX - behaviorStats.lastX;
+    const dy = event.clientY - behaviorStats.lastY;
+    const distance = Math.hypot(dx, dy);
+    const dt = Math.max(1, now - behaviorStats.lastT);
+    behaviorStats.pathLength += distance;
+    behaviorStats.maxSpeed = Math.max(behaviorStats.maxSpeed, distance / dt * 1000);
+  }
+  behaviorStats.lastX = event.clientX;
+  behaviorStats.lastY = event.clientY;
+  behaviorStats.lastT = now;
+  behaviorStats.pointerEvents++;
+}, { passive: true });
+
+window.addEventListener('pointerdown', function() {
+  if (behaviorStats.active) behaviorStats.clicks++;
+}, { passive: true });
+window.addEventListener('keydown', function(event) {
+  if (behaviorStats.active && !event.repeat) behaviorStats.keys++;
+}, { passive: true });
+window.addEventListener('touchstart', function() {
+  if (behaviorStats.active) behaviorStats.touches++;
+}, { passive: true });
+window.addEventListener('scroll', function() {
+  if (behaviorStats.active) behaviorStats.scrolls++;
+}, { passive: true });
+window.addEventListener('wheel', function() {
+  if (behaviorStats.active) behaviorStats.wheels++;
+}, { passive: true });
+document.addEventListener('visibilitychange', function() {
+  if (behaviorStats.active) behaviorStats.visibility++;
+});
+
+function makeBehaviorDim() {
+  const b = behaviorStats;
+  const duration = b.active ? (performance.now() - b.start) : (b.lastDuration || 0);
+  const seconds = Math.max(0.001, duration / 1000);
+  const summary = b.active
+    ? '采样中…'
+    : (b.lastDuration ? (b.pointerEvents + ' 移动 · ' + b.clicks + ' 点击') : '未采样');
+  return {
+    id: 'behavior', group: '对抗与行为', label: '行为采样', tag: 'Behavior', cat: 'behavior',
+    summary: summary,
+    principle: '轨迹、点击与键击节奏属于行为层信号；本页只在本地统计数量、路径长度与速度，不记录按键内容或坐标明细。',
+    note: '采样项不参与 Visitor ID；点击下方按钮后 5 秒内与页面交互即可。',
+    rows: [
+      {k:'采样时长', v:duration ? (Math.round(duration) + ' ms') : '—'},
+      {k:'指针事件', v:b.pointerEvents},
+      {k:'轨迹长度', v:Math.round(b.pathLength) + ' px'},
+      {k:'平均速度', v:Math.round(b.pathLength / seconds) + ' px/s'},
+      {k:'峰值速度', v:Math.round(b.maxSpeed) + ' px/s'},
+      {k:'点击 / 按键 / 触摸', v:b.clicks + ' / ' + b.keys + ' / ' + b.touches},
+      {k:'滚动 / 滚轮', v:b.scrolls + ' / ' + b.wheels},
+      {k:'可见性变化', v:b.visibility}
+    ],
+    extra: `<div class="behavior-actions"><button type="button" class="btn primary" onclick="startBehaviorSample(5000)" ${b.active ? 'disabled' : ''}>${b.active ? '采样中…' : '开始 5 秒采样'}</button></div>`
+  };
+}
+
+function refreshBehaviorDim() {
+  const dims = window._dims || [];
+  const index = dims.findIndex(function(dim) { return dim.id === 'behavior'; });
+  if (index < 0) return;
+  dims[index] = makeBehaviorDim();
+  renderDims(dims, window._activeDim || 'behavior');
+}
+
+window.startBehaviorSample = function(ms) {
+  if (behaviorStats.active) return;
+  resetBehaviorStats();
+  behaviorStats.active = true;
+  behaviorStats.start = performance.now();
+  setStatus('行为采样中：请移动鼠标、点击、滚动或按键…', 'running');
+  refreshBehaviorDim();
+  setTimeout(function() {
+    behaviorStats.active = false;
+    behaviorStats.lastDuration = performance.now() - behaviorStats.start;
+    refreshBehaviorDim();
+    setStatus('行为采样完成 · 数据只在本地内存', 'done');
+  }, ms || 5000);
+};
 
 // 把 visitorId 的每一位渲染成一根竖条，形成可辨认的样本条带
 window.renderBarcode = function(hex) {
@@ -1603,20 +2020,42 @@ window.runTest = async function() {
     $('metaStable').textContent = c.farblingDetected ? '检测到噪声' : '稳定';
     window.renderBarcode(visitorId);
 
-    const dims = [
+    const baseDims = [
       makeCanvasDim(c),
       makeWebglDim(c),
       makeAudioDim(c),
       makeFontDim(c),
       makeHardwareDim(c),
-      makeEnvironmentDim(),
       makeTimezoneDim(c),
-      makeDetectDim(c)
+      makeEnvironmentDim()
     ];
+    const detectDim = makeDetectDim(c);
+    $('metaDims').textContent = (baseDims.length + 1) + ' 项';
+    renderDims(baseDims.concat([detectDim]), window._activeDim || 'canvas');
+    setStatus(`核心指纹完成 · 耗时 ${ms} ms · 正在采集扩展环境…`, 'running');
+
+    let supplemental = null;
+    try {
+      supplemental = await collectSupplementalFingerprint();
+    } catch (error) {
+      console.warn('[supplemental] collection failed:', error);
+    }
+    const supplementalDims = supplemental ? makeSupplementalDims(supplemental) : [];
+    const behaviorDim = makeBehaviorDim();
+    const dims = baseDims.concat(supplementalDims, [detectDim, behaviorDim]);
+    const totalMs = (performance.now()-t0).toFixed(0);
+
+    $('metaTime').textContent = totalMs + ' ms';
     $('metaDims').textContent = dims.length + ' 项';
     renderDims(dims, window._activeDim || 'canvas');
-    setStatus(`采集完成 · 耗时 ${ms} ms · 共 ${dims.length} 个维度`, 'done');
-    window._lastReport = { visitorId, components:c, elapsed:ms };
+    setStatus(`采集完成 · 耗时 ${totalMs} ms · 共 ${dims.length} 个维度（核心 ${baseDims.length + 1} + 扩展 ${supplementalDims.length + 1}）`, 'done');
+    window._lastReport = {
+      visitorId,
+      components: c,
+      supplemental: supplemental,
+      elapsed: totalMs,
+      collectedAt: new Date().toISOString()
+    };
   } catch(e) {
     $('btnRun').disabled = false;
     $('visitorId').classList.remove('pending-anim');

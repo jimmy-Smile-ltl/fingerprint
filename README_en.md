@@ -27,9 +27,12 @@ so headless code emits a fingerprint identical to your real browser.
 
 ## Features
 
-- **Six fingerprint dimensions** (`all_fp.js`): Canvas (basic + advanced), WebGL (hardware params + shader pixels),
+- **Six core dimensions** (`all_fp.js`): Canvas (basic + advanced), WebGL (hardware params + shader pixels),
   Audio, Fonts, Hardware, Timezone — works in both browser and Node.js
-- **Visual collection page** (`test_fp.html`): open in browser → auto-collect → browse dimensions in a side nav →
+- **23-dimension coverage**: core six plus WebGL2/WebGPU, WebRTC, Client Hints, media/voice,
+  permissions/storage, battery/sensors, codecs/DRM, CSS/DOM, JS engine, expanded fonts/Canvas,
+  automation markers and behavior sampling
+- **Visual collection page** (`test_fp.html`): open in browser → auto-collect → grouped dimension nav →
   one-click copy/download of the report
 - **Dimension nav + principles**: each dimension explains its mechanism; a coverage map documents the L1–L6 layers
 - **TLS / JA3 recording**: the Workers `/api/tls` endpoint returns TLS version/cipher/HTTP protocol;
@@ -46,7 +49,8 @@ so headless code emits a fingerprint identical to your real browser.
 
 ```
 fingerprint/
-├── all_fp.js                # Fingerprint collection functions (ES module, browser & Node)
+├── all_fp.js                # Core fingerprint collection (ES module, browser & Node)
+├── supplemental_fp.js       # Supplemental environment signals (WebGL2/WebGPU/WebRTC/CH/media/...)
 ├── fp_env_patch.js          # Node.js environment patch (Canvas/WebGL/Audio prototype chains + injection)
 ├── fp_env_ruishu_plus.js    # Enhanced Ruishu environment (research example, see Disclaimer)
 ├── test_fp.html             # Browser collection page (dimension nav + principles + report export)
@@ -139,6 +143,15 @@ const result = await fp.getFingerprint();
 | `updateFunToString` / `setNativeTag` / `defProp` | Prototype-chain / toString camouflage helpers |
 | `Window` / `Navigator` / `Document` / `HTMLCanvasElement` / `WebGLRenderingContext` / `OfflineAudioContext` … | Environment constructors (for external extension) |
 
+### supplemental_fp.js (browser-only)
+
+`collectSupplementalFingerprint()` returns `clientHints`, `webgl2`, `webgpu`, `webrtc`,
+`mediaDevices`, `speech`, `permissionsStorage`, `batterySensors`, `codecsDrm`, `cssDom`,
+`jsEngine`, `fontsExpanded`, `canvasExtra` and `automation`. These signals are displayed as
+separate dimensions and intentionally excluded from the core `visitorId`. The copied report includes
+`supplemental`; the generated Node environment uses only core `components` (Node has no such browser
+APIs). Behavior sampling stores only counts/timing locally — no key contents or coordinates.
+
 ## Real-World Cases
 
 See [`cases/`](cases/README.md) — the case library is built to aid understanding, with:
@@ -192,6 +205,32 @@ Case overview:
 3. **Patch per dimension** — "real data first, synthetic fallback" for every dimension
 4. **toString camouflage** — hijack `Function.prototype.toString` to return `[native code]`
 5. **Verify** — browser vs Node comparison, dimension by dimension (`test_fp_node.js`)
+
+## Expanded fingerprint coverage (23 dimensions)
+
+Results are grouped in the UI. Supplemental signals are deliberately **not** part of the core
+`visitorId`, so the browser ↔ Node parity demo remains stable.
+
+| Group | Dimensions |
+|-------|------------|
+| Core | Canvas / WebGL / Audio / Fonts / Hardware / Timezone |
+| Environment | UA-screen-DPR-network supplement, Client Hints, WebGL2, WebGPU |
+| Environment | WebRTC ICE, media devices, speech voices, permissions/storage, battery/sensors |
+| Environment | codecs/DRM, CSS/DOM media features, JS-engine quirks, expanded fonts (94), extra Canvas renders |
+| Adversarial | Farbling / WebGL interception / UA reduction, automation markers (webdriver/CDP/Headless) |
+| Behavior | local-only pointer path length, average/peak speed, clicks, keys, touches, scrolls |
+
+Boundaries (different collection points, not missing features):
+
+- **TLS / JA3 / JA4**: handshake signals — recorded by the Workers `/api/tls` endpoint or the local
+  ClientHello capture tool, not by browser JS
+- **TTL / HTTP/2 frames / DNS**: network-stack signals — require packet capture or a custom server
+- **Device SDK / App native / slider trajectories**: require SDK reverse engineering or behavior
+  capture; covered by cases 06/09/16
+- **WAF challenges / signature parameters**: L2/L4 concerns — covered by case documentation
+
+Fingerprinting is an open set; the project's rule is to collect and explain what the browser can
+read, and to mark the rest with a clear boundary and an alternative tool.
 
 ## TLS / JA3 recording
 
