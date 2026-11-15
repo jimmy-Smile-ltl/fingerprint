@@ -145,6 +145,12 @@
   #status.error   { display: block; border-left-color: var(--bad); color: var(--bad); }
 
   /* ===== Results: dimension navigator + detail ===== */
+  .fp-legend {
+    margin: 0 0 10px; font-family: var(--mono); font-size: 11.5px;
+    color: var(--ink-3); line-height: 1.6;
+  }
+  .fp-legend .lg-bad { color: var(--bad); font-weight: 700; }
+  .fp-legend .lg-warn { color: var(--warn); font-weight: 700; }
   .results-shell {
     display: grid; grid-template-columns: 230px minmax(0,1fr);
     gap: 22px; align-items: start;
@@ -533,7 +539,7 @@
     <div class="masthead-main">
       <div>
         <h1>浏览器指纹实验室</h1>
-        <p class="lede">一次采集，覆盖核心六维，以及 WebGL2/WebGPU、WebRTC、Client Hints、媒体与权限、编解码、自动化检测和行为采样等 23 个维度。全部计算在本地完成。</p>
+        <p class="lede">一次采集，覆盖核心六维，以及 WebGL2/WebGPU、WebRTC、Client Hints、媒体与权限、编解码、自动化检测、一致性检测和行为采样等 24 个维度。全部计算在本地完成。</p>
       </div>
       <div class="stamp">仅本地运行<br>数据不上传</div>
     </div>
@@ -598,6 +604,7 @@
 
   <!-- ====== Tab1: 指纹采集结果 ====== -->
   <div id="tab-collect-content">
+    <div class="fp-legend"><span class="lg-bad">红色</span> 与预期不符（强信号） · <span class="lg-warn">黄色</span> 环境相关弱信号（API/能力不可用）</div>
     <div class="results-shell">
       <nav class="fp-nav" id="fp-nav" aria-label="指纹维度导航">
         <div class="fp-nav-head"><span>指纹维度</span><span class="fp-nav-hint">点击切换 · 可滚动</span></div>
@@ -700,6 +707,7 @@
           <ul>
             <li>鼠标轨迹、速度、点击/键击 · 本页行为采样</li>
             <li>webdriver / CDP / Headless · 预期值 + 红色告警</li>
+            <li>UA / CH / 平台 / 时区一致性检测</li>
             <li>滑块轨迹 · 案例 09</li>
             <li>数美 / 顶象 / 极验设备 SDK · 案例 06</li>
             <li>App 侧 native 签名与设备信息 · 案例 16</li>
@@ -1356,20 +1364,22 @@ window.probeTls = async function() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     const fmt = function(v) { return v == null || v === '' ? '不可用' : v; };
+    const tlsVersion = data.tlsVersion || '';
+    const tlsBad = /TLSv1\.[01]|SSLv3/i.test(tlsVersion);
+    const tlsOk = /TLSv1\.[23]/i.test(tlsVersion);
+    const httpWarn = /HTTP\/1\.1/i.test(data.httpProtocol || '');
     const rows = [
-      ['TLS 版本', fmt(data.tlsVersion)],
-      ['加密套件', fmt(data.tlsCipher)],
-      ['HTTP 协议', fmt(data.httpProtocol)],
-      ['Client RTT', data.clientTcpRtt == null ? '不可用' : data.clientTcpRtt + ' ms'],
-      ['ASN', data.asn == null ? '不可用' : data.asn + (data.asOrganization ? ' · ' + data.asOrganization : '')],
-      ['边缘节点', fmt(data.colo)],
-      ['国家/地区', fmt(data.country)],
-      ['JA3', fmt(data.ja3Hash)],
-      ['JA4', fmt(data.ja4)]
+      {k:'TLS 版本', v:fmt(data.tlsVersion), expected:'TLS 1.3 / 1.2', b:tlsBad, g:tlsOk},
+      {k:'加密套件', v:fmt(data.tlsCipher)},
+      {k:'HTTP 协议', v:fmt(data.httpProtocol), expected:'HTTP/2 或 HTTP/3', w:httpWarn},
+      {k:'Client RTT', v:data.clientTcpRtt == null ? '不可用' : data.clientTcpRtt + ' ms'},
+      {k:'ASN', v:data.asn == null ? '不可用' : data.asn + (data.asOrganization ? ' · ' + data.asOrganization : '')},
+      {k:'边缘节点', v:fmt(data.colo)},
+      {k:'国家/地区', v:fmt(data.country)},
+      {k:'JA3', v:fmt(data.ja3Hash), expected:'Bot Management 或本地工具'},
+      {k:'JA4', v:fmt(data.ja4), expected:'Bot Management'}
     ];
-    el.innerHTML = `<dl class="detail-rows">${rows.map(function(row) {
-      return `<div class="drow"><dt>${escapeHtml(row[0])}</dt><dd>${escapeHtml(row[1])}</dd></div>`;
-    }).join('')}</dl><p class="tls-hint">${escapeHtml(data.note || '')}</p>`;
+    el.innerHTML = `<dl class="detail-rows">${rows.map(rowHtml).join('')}</dl><p class="tls-hint">${escapeHtml(data.note || '')}</p>`;
   } catch (e) {
     el.innerHTML = '<p class="tls-fallback">边缘 API 不可用（静态托管 / 本地 http.server 都会这样）。请使用右侧的本地 JA3 捕获工具；部署到 Cloudflare Workers 后，此按钮会返回真实 TLS 元数据。</p>';
   }
@@ -1643,6 +1653,121 @@ function fmtBytes(value) {
   return (Math.round(n * 100) / 100) + ' ' + units[i];
 }
 
+function makeConsistencyDim(c, s) {
+  s = s || {};
+  const ua = navigator.userAgent || '';
+  const platform = navigator.platform || '';
+  const ch = s.clientHints || {};
+  const webglBasic = c.webglBasic || '';
+  const params = {};
+  webglBasic.split('|').forEach(function(item) {
+    const idx = item.indexOf(':');
+    if (idx > 0) params[item.slice(0, idx)] = item.slice(idx + 1);
+  });
+  const renderer = params.unmaskedRenderer || params.renderer || '';
+  const rows = [];
+  const add = function(key, value, expected, status) {
+    rows.push({
+      k: key, v: value, expected: expected,
+      b: status === 'bad' ? 1 : 0,
+      w: status === 'warn' ? 1 : 0,
+      g: status === 'ok' ? 1 : 0
+    });
+  };
+
+  // UA vs navigator.platform
+  let expectedPlatform = null;
+  if (/Windows/i.test(ua)) expectedPlatform = 'Win32';
+  else if (/Macintosh|Mac OS X/i.test(ua)) expectedPlatform = 'MacIntel';
+  else if (/Android/i.test(ua)) expectedPlatform = 'Linux';
+  else if (/Linux/i.test(ua)) expectedPlatform = 'Linux';
+  else if (/iPhone/i.test(ua)) expectedPlatform = 'iPhone';
+  else if (/iPad/i.test(ua)) expectedPlatform = 'iPad';
+  if (expectedPlatform) {
+    const ok = expectedPlatform === 'Linux'
+      ? /^Linux/i.test(platform)
+      : platform === expectedPlatform;
+    add('UA vs navigator.platform', platform + ' / 期望 ' + expectedPlatform, expectedPlatform, ok ? '' : 'bad');
+  }
+
+  // UA vs Client Hints platform / brands
+  if (ch.available && ch.platform) {
+    const expectedCH = /Windows/i.test(ua) ? 'Windows'
+      : /Macintosh|Mac OS X/i.test(ua) ? 'macOS'
+      : /Android/i.test(ua) ? 'Android'
+      : /Linux/i.test(ua) ? 'Linux'
+      : /iPhone|iPad/i.test(ua) ? 'iOS' : null;
+    if (expectedCH) {
+      add('UA vs Client Hints 平台', ch.platform, expectedCH, ch.platform === expectedCH ? '' : 'bad');
+    }
+  } else if (ch.available === false) {
+    const chromiumUA = /Chrome\//.test(ua) || /Edg\//.test(ua);
+    add('Client Hints', '不可用', chromiumUA ? 'Chromium 可用' : '不适用（非 Chromium）', chromiumUA ? 'warn' : '');
+  }
+  if (ch.available && /Chrome\//.test(ua)) {
+    const brands = ch.brands || '';
+    add('UA vs Client Hints 品牌', brands || '—', '包含 Chrome/Chromium', /Chrome|Chromium/i.test(brands) ? '' : 'bad');
+  }
+  if (ch.available && ch.mobile === false && (navigator.maxTouchPoints || 0) > 0) {
+    add('Client Hints mobile vs 触点数', 'mobile=false / touch=' + navigator.maxTouchPoints, '移动标记与触点数一致', 'warn');
+  }
+
+  // language ordering
+  const languages = Array.isArray(navigator.languages) ? navigator.languages : [];
+  if (navigator.language && languages.length) {
+    add('language vs languages[0]', navigator.language + ' / ' + languages[0], '相同', navigator.language === languages[0] ? '' : 'bad');
+  }
+
+  // screen availability vs resolution
+  const screenW = (typeof screen !== 'undefined' && screen.width) || 0;
+  const screenH = (typeof screen !== 'undefined' && screen.height) || 0;
+  const availW = (typeof screen !== 'undefined' && screen.availWidth) || 0;
+  const availH = (typeof screen !== 'undefined' && screen.availHeight) || 0;
+  const screenBad = availW > screenW || availH > screenH;
+  add('屏幕可用区域 vs 分辨率', availW + '×' + availH + ' / ' + screenW + '×' + screenH, '可用区域 ≤ 分辨率', screenBad ? 'bad' : '');
+
+  // WebGL renderer vs UA platform
+  if (renderer) {
+    let glOk = true;
+    if (/Windows/i.test(ua) && /Apple|Metal/i.test(renderer)) glOk = false;
+    if (/Macintosh|Mac OS X/i.test(ua) && /Direct3D|D3D11|D3D9/i.test(renderer)) glOk = false;
+    if (/Linux/i.test(ua) && !/Android/i.test(ua) && /Direct3D|D3D11|D3D9/i.test(renderer)) glOk = false;
+    add('WebGL 渲染器 vs UA 平台', renderer, '与平台一致', glOk ? '' : 'bad');
+  }
+
+  // Intl timezone vs Date offset
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'longOffset' }).formatToParts(new Date());
+    const name = (parts.find(function(p) { return p.type === 'timeZoneName'; }) || {}).value || '';
+    const match = name.match(/GMT([+-])(\d{1,2})(?::?(\d{2}))?/);
+    let intlOffset = null;
+    if (match) {
+      intlOffset = (match[1] === '-' ? -1 : 1) * (parseInt(match[2], 10) * 60 + parseInt(match[3] || '0', 10));
+    } else if (name === 'GMT' || name === 'UTC') {
+      intlOffset = 0;
+    }
+    if (intlOffset != null) {
+      const actual = -new Date().getTimezoneOffset();
+      add('时区 vs UTC 偏移', tz + ' / ' + actual + ' min', 'Intl 偏移 ' + intlOffset + ' min', actual === intlOffset ? '' : 'bad');
+    }
+  } catch (error) { /* ignore */ }
+
+  const red = rows.filter(function(row) { return row.b; }).length;
+  const amber = rows.filter(function(row) { return row.w; }).length;
+  return {
+    id: 'consistency', group: '对抗与行为', label: '一致性检测', tag: 'Consistency', cat: 'detect',
+    alert: red > 0,
+    summary: red ? (red + ' 项不一致') : amber ? (amber + ' 项弱告警') : '一致',
+    principle: '把 UA、平台、Client Hints、语言、屏幕、WebGL 渲染器与时区偏移交叉比对；强不一致常见于 UA 伪装、补环境或代理，弱告警只提示环境差异。',
+    note: red
+      ? '红色 = 强不一致（UA / CH / 渲染器 / 时区互相矛盾）；黄色 = 环境相关的弱信号。'
+      : (amber ? '黄色 = 环境相关的弱信号，不一定是异常。' : ''),
+    two: true,
+    rows: rows
+  };
+}
+
 function makeSupplementalDims(s) {
   const dims = [];
 
@@ -1660,7 +1785,7 @@ function makeSupplementalDims(s) {
       {k:'平台版本', v:s.clientHints.platformVersion || '—'},
       {k:'完整版本', v:s.clientHints.uaFullVersion || '—'},
       {k:'WOW64', v:s.clientHints.wow64 == null ? '—' : yesNo(s.clientHints.wow64)}
-    ] : [{k:'状态', v:'不可用（浏览器不支持 userAgentData）', w:1}],
+    ] : [{k:'状态', v:'不可用（浏览器不支持 userAgentData）', expected:'Chromium 可用', w:1}],
     extra: s.clientHints && s.clientHints.fullVersionList && s.clientHints.fullVersionList.length
       ? `<div class="font-chips">${s.clientHints.fullVersionList.map(function(v){return `<span class="font-chip">${escapeHtml(v)}</span>`;}).join('')}</div>` : ''
   });
@@ -1683,7 +1808,7 @@ function makeSupplementalDims(s) {
       {k:'颜色附件', v:s.webgl2.maxColorAttachments},
       {k:'MSAA 采样', v:s.webgl2.maxSamples},
       {k:'扩展数量', v:s.webgl2.extensionCount}
-    ] : [{k:'状态', v:'不可用（浏览器未提供 WebGL2）', w:1}]
+    ] : [{k:'状态', v:'不可用（浏览器未提供 WebGL2）', expected:'可用', w:1}]
   });
 
   // WebGPU
@@ -1692,7 +1817,7 @@ function makeSupplementalDims(s) {
     summary: s.webgpu && s.webgpu.adapter ? (s.webgpu.vendor || 'adapter 可用') : (s.webgpu && s.webgpu.available ? '无 adapter' : '不可用'),
     principle: 'WebGPU 暴露 GPU adapter 的厂商、架构、特性与限制；是 WebGL 之外更现代的图形能力指纹。',
     rows: s.webgpu && s.webgpu.available ? [
-      {k:'adapter', v:s.webgpu.adapter ? '可用' : '未返回', g:!!s.webgpu.adapter, w:!s.webgpu.adapter},
+      {k:'adapter', v:s.webgpu.adapter ? '可用' : '未返回', expected:'可用', g:!!s.webgpu.adapter, w:!s.webgpu.adapter},
       {k:'厂商', v:s.webgpu.vendor || '—'},
       {k:'架构', v:s.webgpu.architecture || '—'},
       {k:'设备', v:s.webgpu.device || '—'},
@@ -1701,7 +1826,7 @@ function makeSupplementalDims(s) {
       {k:'最大纹理 2D', v:s.webgpu.maxTextureDimension2D || '—'},
       {k:'最大 Buffer', v:fmtBytes(s.webgpu.maxBufferSize)},
       {k:'Workgroup X', v:s.webgpu.maxComputeWorkgroupSizeX || '—'}
-    ] : [{k:'状态', v:'不可用（浏览器不支持 WebGPU）', w:1}],
+    ] : [{k:'状态', v:'不可用（浏览器不支持 WebGPU）', expected:'可用', w:1}],
     extra: s.webgpu && s.webgpu.features && s.webgpu.features.length
       ? `<div class="font-chips">${s.webgpu.features.map(function(v){return `<span class="font-chip">${escapeHtml(v)}</span>`;}).join('')}</div>` : ''
   });
@@ -1713,7 +1838,7 @@ function makeSupplementalDims(s) {
     principle: 'ICE 候选会暴露本地网络、容器地址或 mDNS 名称；在代理/VPN 场景中常用于交叉验证真实网络环境。',
     note: '本页只使用空 STUN 配置，不连接外部服务器；候选地址仅在本地展示。',
     rows: s.webrtc && s.webrtc.available ? [
-      {k:'候选数量', v:s.webrtc.count},
+      {k:'候选数量', v:s.webrtc.count, expected:'≥1 个候选', w:s.webrtc.count === 0},
       {k:'候选类型', v:Object.keys(s.webrtc.types || {}).map(function(k){return k + '×' + s.webrtc.types[k];}).join(', ') || '—'},
       {k:'错误', v:s.webrtc.error || '—', w:!!s.webrtc.error}
     ] : [{k:'状态', v:'不可用（浏览器不支持 RTCPeerConnection）', w:1}],
@@ -1728,7 +1853,7 @@ function makeSupplementalDims(s) {
     summary: s.mediaDevices && s.mediaDevices.available ? ((s.mediaDevices.total || 0) + ' 个设备') : '不可用',
     principle: '摄像头、麦克风、扬声器的数量与类型反映外设配置；设备标签通常需要用户授权后才能读取。',
     rows: s.mediaDevices && s.mediaDevices.available ? [
-      {k:'设备总数', v:s.mediaDevices.total || 0},
+      {k:'设备总数', v:s.mediaDevices.total || 0, expected:'≥1 个设备', w:(s.mediaDevices.total || 0) === 0},
       {k:'音频输入', v:mediaCounts.audioinput || 0},
       {k:'音频输出', v:mediaCounts.audiooutput || 0},
       {k:'视频输入', v:mediaCounts.videoinput || 0},
@@ -1744,7 +1869,7 @@ function makeSupplementalDims(s) {
     summary: s.speech && s.speech.available ? ((s.speech.count || 0) + ' 个语音') : '不可用',
     principle: 'TTS 语音列表由操作系统与浏览器共同决定；语音名称、语言和本地/在线属性可以区分平台。',
     rows: s.speech && s.speech.available ? [
-      {k:'语音数量', v:s.speech.count || 0},
+      {k:'语音数量', v:s.speech.count || 0, expected:'≥1 个语音', w:(s.speech.count || 0) === 0},
       {k:'本地语音', v:s.speech.localCount || 0},
       {k:'语言数量', v:(s.speech.languages || []).length},
       {k:'语言', v:(s.speech.languages || []).slice(0, 10).join(', ') || '—'}
@@ -2070,14 +2195,15 @@ window.runTest = async function() {
       console.warn('[supplemental] collection failed:', error);
     }
     const supplementalDims = supplemental ? makeSupplementalDims(supplemental) : [];
+    const consistencyDim = makeConsistencyDim(c, supplemental || {});
     const behaviorDim = makeBehaviorDim();
-    const dims = baseDims.concat(supplementalDims, [detectDim, behaviorDim]);
+    const dims = baseDims.concat(supplementalDims, [detectDim, consistencyDim, behaviorDim]);
     const totalMs = (performance.now()-t0).toFixed(0);
 
     $('metaTime').textContent = totalMs + ' ms';
     $('metaDims').textContent = dims.length + ' 项';
     renderDims(dims, window._activeDim || 'canvas');
-    setStatus(`采集完成 · 耗时 ${totalMs} ms · 共 ${dims.length} 个维度（核心 ${baseDims.length + 1} + 扩展 ${supplementalDims.length + 1}）`, 'done');
+    setStatus(`采集完成 · 耗时 ${totalMs} ms · 共 ${dims.length} 个维度（核心 ${baseDims.length + 1} + 扩展 ${supplementalDims.length + 2}）`, 'done');
     window._lastReport = {
       visitorId,
       components: c,

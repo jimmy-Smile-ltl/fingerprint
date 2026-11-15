@@ -29,8 +29,8 @@
 
 - **六大核心维度**（`all_fp.js`）：Canvas（基础 + 高级）、WebGL（硬件参数 + 着色器像素）、
   Audio、字体、硬件、时区，浏览器与 Node.js 双环境通用
-- **23 个维度全面覆盖**：核心六维 + WebGL2/WebGPU、WebRTC、Client Hints、媒体/语音、
-  权限/存储、电池/传感器、编解码/DRM、CSS/DOM、JS 引擎、扩展字体/Canvas、自动化检测、行为采样
+- **24 个维度全面覆盖**：核心六维 + WebGL2/WebGPU、WebRTC、Client Hints、媒体/语音、
+  权限/存储、电池/传感器、编解码/DRM、CSS/DOM、JS 引擎、扩展字体/Canvas、自动化检测、一致性检测、行为采样
 - **可视化采集页面**（`test_fp.html`）：浏览器打开 → 自动采集 → 分组维度导航 → 一键复制/下载报告
 - **维度导航 + 原理说明**：每个维度附一条技术原理；「指纹覆盖地图」说明 L1–L6 分层与边界
 - **TLS / JA3 记录**：Workers 边缘 `/api/tls` 返回 TLS 版本/套件/HTTP 协议；本地
@@ -214,7 +214,7 @@ const result = await fp.getFingerprint();
 4. **toString 伪装** — `Function.prototype.toString` 劫持，返回 `[native code]`
 5. **验证** — 浏览器 vs Node 逐项对比（`test_fp_node.js`）
 
-## 🧩 扩展指纹覆盖（23 个维度）
+## 🧩 扩展指纹覆盖（24 个维度）
 
 页面采集结果按三组展示；**扩展项不进入 core visitorId**，避免破坏浏览器 ↔ Node 的一致性。
 
@@ -226,10 +226,11 @@ const result = await fp.getFingerprint();
 | 扩展环境 | 权限与存储 / 电池与传感器 | Permissions 状态、配额、localStorage；电量、传感器构造器、手柄 |
 | 扩展环境 | 编解码与 DRM / CSS·DOM / JS 引擎 | H.264/HEVC/AV1、Widevine/PlayReady；媒体查询、CSS.supports；Math/Intl/错误栈 |
 | 扩展环境 | 扩展字体 / 扩展 Canvas | 94 个候选字体的安装列表；渐变文字、emoji、混合模式、evenodd 画布 |
-| 对抗与行为 | 反指纹检测 / 自动化检测 | Farbling、WebGL 拦截、UA 精简；webdriver、CDP 标记、Headless UA |
+| 对抗与行为 | 反指纹检测 / 自动化检测 / 一致性检测 | Farbling、WebGL 拦截、UA 精简；webdriver、CDP 标记、Headless UA；UA vs CH/平台/时区交叉校验 |
 | 对抗与行为 | 行为采样 | 指针轨迹长度、平均/峰值速度、点击、按键、触摸、滚动（仅本地统计） |
 
-检测类维度（自动化检测、反指纹检测、WebGL 软件渲染）会为每行标注**预期值**；实际值与预期不符时整行红色高亮，左侧导航同时汇总异常数量。
+检测类维度（自动化检测、反指纹检测、一致性检测、WebGL 软件渲染）会为每行标注**预期值**：
+实际值与预期不符时整行**红色**高亮，左侧导航汇总异常数量；可选 API/能力缺失等环境相关差异用**黄色**弱告警。
 
 ### 边界（不是“遗漏”，是采集位置不同）
 

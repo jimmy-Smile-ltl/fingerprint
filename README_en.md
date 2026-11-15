@@ -29,9 +29,9 @@ so headless code emits a fingerprint identical to your real browser.
 
 - **Six core dimensions** (`all_fp.js`): Canvas (basic + advanced), WebGL (hardware params + shader pixels),
   Audio, Fonts, Hardware, Timezone — works in both browser and Node.js
-- **23-dimension coverage**: core six plus WebGL2/WebGPU, WebRTC, Client Hints, media/voice,
+- **24-dimension coverage**: core six plus WebGL2/WebGPU, WebRTC, Client Hints, media/voice,
   permissions/storage, battery/sensors, codecs/DRM, CSS/DOM, JS engine, expanded fonts/Canvas,
-  automation markers and behavior sampling
+  automation markers, consistency checks and behavior sampling
 - **Visual collection page** (`test_fp.html`): open in browser → auto-collect → grouped dimension nav →
   one-click copy/download of the report
 - **Dimension nav + principles**: each dimension explains its mechanism; a coverage map documents the L1–L6 layers
@@ -206,7 +206,7 @@ Case overview:
 4. **toString camouflage** — hijack `Function.prototype.toString` to return `[native code]`
 5. **Verify** — browser vs Node comparison, dimension by dimension (`test_fp_node.js`)
 
-## Expanded fingerprint coverage (23 dimensions)
+## Expanded fingerprint coverage (24 dimensions)
 
 Results are grouped in the UI. Supplemental signals are deliberately **not** part of the core
 `visitorId`, so the browser ↔ Node parity demo remains stable.
@@ -217,12 +217,12 @@ Results are grouped in the UI. Supplemental signals are deliberately **not** par
 | Environment | UA-screen-DPR-network supplement, Client Hints, WebGL2, WebGPU |
 | Environment | WebRTC ICE, media devices, speech voices, permissions/storage, battery/sensors |
 | Environment | codecs/DRM, CSS/DOM media features, JS-engine quirks, expanded fonts (94), extra Canvas renders |
-| Adversarial | Farbling / WebGL interception / UA reduction, automation markers (webdriver/CDP/Headless) |
+| Adversarial | Farbling / WebGL interception / UA reduction, automation markers (webdriver/CDP/Headless), UA-vs-CH/platform/timezone consistency |
 | Behavior | local-only pointer path length, average/peak speed, clicks, keys, touches, scrolls |
 
-Detection dimensions (automation, anti-fingerprinting, WebGL software rendering) annotate an
-**expected value** on every row; a mismatch highlights the row in red and the left nav summarizes
-the number of anomalies.
+Detection dimensions (automation, anti-fingerprinting, consistency, WebGL software rendering)
+annotate an **expected value** on every row; a strong mismatch highlights the row in red and the
+left nav summarizes the number of anomalies. Optional API/capability gaps use amber warnings.
 
 Boundaries (different collection points, not missing features):
 
