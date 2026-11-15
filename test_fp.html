@@ -647,7 +647,7 @@
     <div class="masthead-main">
       <div>
         <h1>浏览器指纹实验室</h1>
-        <p class="lede">一次采集，覆盖核心六维，以及 WebGL2/WebGPU、WebRTC、Client Hints、媒体与权限、编解码、自动化检测、一致性检测和行为采样等 24 个维度。全部计算在本地完成。</p>
+        <p class="lede">一次采集，覆盖核心六维，以及 WebGL2/WebGPU、WebRTC、Client Hints、插件与扩展、媒体与权限、编解码、自动化检测、一致性检测和行为采样等 25 个维度。全部计算在本地完成。</p>
       </div>
       <div class="stamp">仅本地运行<br>数据不上传</div>
     </div>
@@ -751,7 +751,7 @@
         </div>
         <div class="layer-row is-current">
           <span class="layer-id">L3</span><span class="layer-name">环境层</span>
-          <span class="layer-desc">Canvas · WebGL2/WebGPU · Audio · 字体 · 硬件 · 时区 · Client Hints · WebRTC · 媒体/权限/编解码</span>
+          <span class="layer-desc">Canvas · WebGL2/WebGPU · Audio · 字体 · 硬件 · 时区 · Client Hints · 插件 · WebRTC · 媒体/权限/编解码</span>
           <span class="layer-flag flag-page">本页覆盖</span>
         </div>
         <div class="layer-row">
@@ -789,6 +789,7 @@
           <h3>扩展环境 · 本页实时</h3>
           <ul>
             <li>Client Hints · WebGL2 · WebGPU</li>
+            <li>插件 / MIME 类型（仅内置 PDF；扩展不可枚举）</li>
             <li>WebRTC ICE · 媒体设备 · 语音合成</li>
             <li>权限 / 存储 / 电池（电量/充电/时间）/ 传感器 / 手柄</li>
             <li>编解码 · Widevine / PlayReady</li>
@@ -1870,6 +1871,17 @@ const DIM_EXPLAIN = {
       '非 Chromium 浏览器不支持该 API，不应作为异常。'
     ]
   },
+  plugins: {
+    more: [
+      'navigator.plugins 与 mimeTypes 暴露的是浏览器内置的老式插件；现代 Chromium 已冻结为 PDF 阅读器条目，Chrome/Edge 常见 5 项。',
+      '它不等于已安装的浏览器扩展。扩展列表没有标准 Web API：chrome.management 只对扩展自身开放，Firefox 的 moz-extension ID 也按 profile 随机。'
+    ],
+    details: [
+      '此维度只做低熵辅助指纹，不参与 visitorId。',
+      '插件列表全为 PDF 时，主要反映浏览器内核与 PDF 阅读器设置，不反映用户装了哪些扩展。',
+      '已知扩展探测依赖扩展声明的 Web Accessible Resources，覆盖不完整；本页不启用，避免误报与额外请求。'
+    ]
+  },
   webgl2: {
     more: [
       'WebGL2 暴露比 WebGL1 更多的硬件上限与扩展，仍由 GPU/驱动决定。',
@@ -2489,6 +2501,30 @@ function makeSupplementalDims(s) {
     ] : [{k:'状态', v:'不可用（浏览器不支持 userAgentData）', expected:'Chromium 可用', w:1}],
     extra: s.clientHints && s.clientHints.fullVersionList && s.clientHints.fullVersionList.length
       ? `<div class="font-chips">${s.clientHints.fullVersionList.map(function(v){return `<span class="font-chip">${escapeHtml(v)}</span>`;}).join('')}</div>` : ''
+  });
+
+  // Legacy plugins / MIME types (not an extension list)
+  const pl = s.plugins || {};
+  const pluginList = Array.isArray(pl.plugins) ? pl.plugins : [];
+  const pluginNames = pluginList.map(function(p) { return p.name; }).filter(Boolean);
+  dims.push({
+    id: 'plugins', group: '扩展环境', label: '插件与扩展', tag: 'Plugin', cat: 'system',
+    summary: pl.available ? ((pl.pluginCount || 0) + ' 个插件' + (pl.allPdf ? ' · PDF' : '')) : '不可用',
+    principle: 'navigator.plugins 暴露的是浏览器内置的老式插件，不是已安装扩展。现代 Chromium 已将列表冻结为 PDF 阅读器条目；网页没有标准 API 枚举扩展。',
+    note: '承认覆盖缺陷：本维度只能读取 navigator.plugins / mimeTypes，无法列出扩展。已知扩展探测需要预置扩展 ID + Web Accessible Resources，覆盖率有限，本页不启用。',
+    two: true,
+    rows: pl.available ? [
+      {k:'插件数量', v:pl.pluginCount || 0, expected:'通常 0–5（浏览器内置）'},
+      {k:'PDF 阅读器', v:pl.pdfViewerEnabled == null ? '未提供' : yesNo(pl.pdfViewerEnabled), expected:'通常启用'},
+      {k:'全部为 PDF 插件', v:pl.allPdf ? '是（Chromium 冻结列表）' : '否'},
+      {k:'MIME 类型数', v:pl.mimeCount || 0},
+      {k:'插件指纹', v:pl.fingerprint ? shortHash(pl.fingerprint) : '—', h:!!pl.fingerprint},
+      {k:'已安装扩展', v:'网页不可枚举', expected:'浏览器不提供此 API'},
+      {k:'已知扩展探测', v:'未启用', expected:'需已知 ID + WAR'}
+    ] : [{k:'状态', v:'不可用（navigator.plugins 缺失）'}],
+    extra: pluginNames.length
+      ? `<div class="font-chips">${pluginNames.map(function(name) { return `<span class="font-chip">${escapeHtml(name)}</span>`; }).join('')}</div>`
+      : ''
   });
 
   // WebGL2

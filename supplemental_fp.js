@@ -544,7 +544,69 @@ function collectAutomation() {
 }
 
 // ---------------------------------------------------------------------------
-// 13. Expanded font list
+// 13. Legacy plugins / MIME types
+// ---------------------------------------------------------------------------
+function collectPlugins() {
+  const plugins = [];
+  const mimeTypes = [];
+  try {
+    const list = navigator.plugins || [];
+    for (let i = 0; i < list.length; i++) {
+      const plugin = list[i];
+      if (!plugin) continue;
+      const types = [];
+      for (let j = 0; j < plugin.length; j++) {
+        if (plugin[j] && plugin[j].type) types.push(plugin[j].type);
+      }
+      plugins.push({
+        name: plugin.name || '',
+        filename: plugin.filename || '',
+        description: plugin.description || '',
+        version: plugin.version || '',
+        mimeTypes: types
+      });
+    }
+  } catch (error) { /* ignore */ }
+  try {
+    const list = navigator.mimeTypes || [];
+    for (let i = 0; i < list.length; i++) {
+      const mime = list[i];
+      if (!mime) continue;
+      mimeTypes.push({
+        type: mime.type || '',
+        suffixes: mime.suffixes || '',
+        description: mime.description || '',
+        plugin: mime.enabledPlugin && mime.enabledPlugin.name || ''
+      });
+    }
+  } catch (error) { /* ignore */ }
+  const allPdf = plugins.length > 0 && plugins.every(function(plugin) {
+    return /pdf/i.test(plugin.name + ' ' + plugin.description + ' ' + plugin.filename);
+  });
+  const fingerprint = (plugins.length || mimeTypes.length)
+    ? md5(JSON.stringify({
+      plugins: plugins.map(function(plugin) {
+        return [plugin.name, plugin.filename, plugin.description, plugin.mimeTypes];
+      }),
+      mimeTypes: mimeTypes.map(function(mime) { return mime.type; })
+    }))
+    : null;
+  return {
+    available: true,
+    plugins,
+    mimeTypes,
+    pluginCount: plugins.length,
+    mimeCount: mimeTypes.length,
+    allPdf,
+    fingerprint,
+    pdfViewerEnabled: typeof navigator.pdfViewerEnabled === 'boolean' ? navigator.pdfViewerEnabled : null,
+    // Browser extensions are intentionally not enumerable from a web page.
+    extensionEnumeration: 'unavailable'
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 14. Expanded font list
 // ---------------------------------------------------------------------------
 function collectFontsExpanded() {
   const candidates = [
@@ -662,6 +724,7 @@ export async function collectSupplementalFingerprint() {
     cssDom: collectCssDom(),
     jsEngine: collectJsEngine(),
     automation: collectAutomation(),
+    plugins: collectPlugins(),
     fontsExpanded: collectFontsExpanded(),
     canvasExtra: collectCanvasExtra()
   };

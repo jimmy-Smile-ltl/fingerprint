@@ -29,9 +29,9 @@ so headless code emits a fingerprint identical to your real browser.
 
 - **Six core dimensions** (`all_fp.js`): Canvas (basic + advanced), WebGL (hardware params + shader pixels),
   Audio, Fonts, Hardware, Timezone — works in both browser and Node.js
-- **24-dimension coverage**: core six plus WebGL2/WebGPU, WebRTC, Client Hints, media/voice,
-  permissions/storage, battery/sensors, codecs/DRM, CSS/DOM, JS engine, expanded fonts/Canvas,
-  automation markers, consistency checks and behavior sampling
+- **25-dimension coverage**: core six plus WebGL2/WebGPU, WebRTC, Client Hints, plugins/extensions,
+  media/voice, permissions/storage, battery/sensors, codecs/DRM, CSS/DOM, JS engine,
+  expanded fonts/Canvas, automation markers, consistency checks and behavior sampling
 - **Visual collection page** (`test_fp.html`): open in browser → auto-collect → grouped dimension nav →
   one-click copy/download of the report
 - **Dimension nav + rich explanations**: each dimension includes multi-paragraph principles and "how to read it" notes; a coverage map documents the L1–L6 layers
@@ -207,7 +207,7 @@ Case overview:
 4. **toString camouflage** — hijack `Function.prototype.toString` to return `[native code]`
 5. **Verify** — browser vs Node comparison, dimension by dimension (`test_fp_node.js`)
 
-## Expanded fingerprint coverage (24 dimensions)
+## Expanded fingerprint coverage (25 dimensions)
 
 Results are grouped in the UI. Supplemental signals are deliberately **not** part of the core
 `visitorId`, so the browser ↔ Node parity demo remains stable.
@@ -216,10 +216,18 @@ Results are grouped in the UI. Supplemental signals are deliberately **not** par
 |-------|------------|
 | Core | Canvas / WebGL / Audio / Fonts / Hardware / Timezone |
 | Environment | UA-screen-DPR-network supplement, Client Hints, WebGL2, WebGPU |
+| Environment | legacy plugins / MIME types and their hash; only built-in PDF plugins — **installed extensions cannot be enumerated** |
 | Environment | WebRTC ICE, media devices, speech voices, permissions/storage, battery/sensors |
 | Environment | codecs/DRM, CSS/DOM media features, JS-engine quirks, expanded fonts (94), extra Canvas renders |
 | Adversarial | Farbling / WebGL interception / UA reduction, automation markers (webdriver/CDP/Headless), UA-vs-CH/platform/timezone consistency |
 | Behavior | local-only pointer path length, average/peak speed, clicks, keys, touches, scrolls |
+
+**Plugin / extension limitation**: `navigator.plugins` and `mimeTypes` expose legacy built-in
+plugins (typically PDF readers), not installed extensions. There is no standard web API to enumerate
+extensions. Known-extension probing depends on declared Web Accessible Resources, works only for some
+Chromium extensions, and misses MV3 dynamic URLs, disabled extensions and Firefox's per-profile IDs.
+This dimension is a low-entropy auxiliary fingerprint, is not part of `visitorId`, and does no
+extension probing.
 
 Detection dimensions (automation, anti-fingerprinting, consistency, WebGL software rendering)
 annotate an **expected value** on every row. Only strong signals (WebDriver, headless UA,

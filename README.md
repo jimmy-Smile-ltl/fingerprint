@@ -29,7 +29,7 @@
 
 - **六大核心维度**（`all_fp.js`）：Canvas（基础 + 高级）、WebGL（硬件参数 + 着色器像素）、
   Audio、字体、硬件、时区，浏览器与 Node.js 双环境通用
-- **24 个维度全面覆盖**：核心六维 + WebGL2/WebGPU、WebRTC、Client Hints、媒体/语音、
+- **25 个维度全面覆盖**：核心六维 + WebGL2/WebGPU、WebRTC、Client Hints、插件/扩展、媒体/语音、
   权限/存储、电池/传感器、编解码/DRM、CSS/DOM、JS 引擎、扩展字体/Canvas、自动化检测、一致性检测、行为采样
 - **可视化采集页面**（`test_fp.html`）：浏览器打开 → 自动采集 → 分组维度导航 → 一键复制/下载报告
 - **维度导航 + 丰富原理**：每个维度包含多段技术原理与「怎么读」要点；「指纹覆盖地图」说明 L1–L6 分层与边界
@@ -215,7 +215,7 @@ const result = await fp.getFingerprint();
 4. **toString 伪装** — `Function.prototype.toString` 劫持，返回 `[native code]`
 5. **验证** — 浏览器 vs Node 逐项对比（`test_fp_node.js`）
 
-## 🧩 扩展指纹覆盖（24 个维度）
+## 🧩 扩展指纹覆盖（25 个维度）
 
 页面采集结果按三组展示；**扩展项不进入 core visitorId**，避免破坏浏览器 ↔ Node 的一致性。
 
@@ -223,12 +223,18 @@ const result = await fp.getFingerprint();
 |------|------|---------|
 | 核心指纹 | Canvas / WebGL / Audio / 字体 / 硬件 / 时区 | 像素哈希、GPU 参数、波形采样、字体列表、CPU/RAM、IANA 时区 |
 | 扩展环境 | 环境补充 / Client Hints / WebGL2 / WebGPU | UA、屏幕、DPR、网络信息；UA-CH 高熵值；GPU 上限/adapter |
+| 扩展环境 | 插件与扩展 | `navigator.plugins` / MIME 与指纹；只有内置 PDF 插件，**扩展列表不可枚举**（已知扩展探测需预置 ID + WAR） |
 | 扩展环境 | WebRTC / 媒体设备 / 语音合成 | ICE 候选与类型；摄像头/麦克风/扬声器数量；TTS 语音列表 |
 | 扩展环境 | 权限与存储 / 电池与传感器 | Permissions 状态、配额、localStorage；电量、传感器构造器、手柄 |
 | 扩展环境 | 编解码与 DRM / CSS·DOM / JS 引擎 | H.264/HEVC/AV1、Widevine/PlayReady；媒体查询、CSS.supports；Math/Intl/错误栈 |
 | 扩展环境 | 扩展字体 / 扩展 Canvas | 94 个候选字体的安装列表；渐变文字、emoji、混合模式、evenodd 画布 |
 | 对抗与行为 | 反指纹检测 / 自动化检测 / 一致性检测 | Farbling、WebGL 拦截、UA 精简；webdriver、CDP 标记、Headless UA；UA vs CH/平台/时区交叉校验 |
 | 对抗与行为 | 行为采样 | 指针轨迹长度、平均/峰值速度、点击、按键、触摸、滚动（仅本地统计） |
+
+**插件 / 扩展维度的缺陷**：网页只能拿到 `navigator.plugins` / `mimeTypes`，它暴露的是浏览器内置的
+PDF 等老式插件，**不是已安装的扩展**。扩展没有标准 Web API 可枚举；已知扩展探测依赖扩展声明的
+Web Accessible Resources，仅适用于部分 Chromium 扩展，MV3 的动态 URL、禁用状态和 Firefox 的
+按 profile 随机 ID 都会导致漏报。因此本维度只做低熵辅助指纹，不参与 `visitorId`，也不做扩展探测。
 
 检测类维度（自动化检测、反指纹检测、一致性检测、WebGL）会为每行标注**预期值**：
 只有明确的强信号（WebDriver、Headless UA、注入/CDC 标记、Farbling 等）才**红色**高亮并计入导航异常数；
