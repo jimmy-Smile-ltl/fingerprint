@@ -2000,7 +2000,8 @@ const DIM_EXPLAIN = {
     ],
     details: [
       'WebDriver、Headless UA、注入/CDC 标记是强信号。',
-      '软件渲染、窗口尺寸、焦点、插件数量属于环境提示，需结合其他信号判断。',
+      '软件渲染、焦点、插件数量属于环境提示，需结合其他信号判断。',
+      '窗口外/内尺寸受页面缩放、DPI、全屏与 DevTools 影响，仅展示，不参与判定。',
       '红色 = 明确异常；黄色 = 环境差异，不代表一定是恶意爬虫。'
     ]
   },
@@ -2728,13 +2729,13 @@ function makeSupplementalDims(s) {
   if (a && automationIssues) {
     automationNote = '红色 = 明确的自动化痕迹（WebDriver、Headless UA、注入/CDC 标记）。黄色 = 环境相关弱信号，不单独代表自动化；开发工具、缩放、远程桌面和移动浏览器都可能触发。';
   } else if (a && automationWarnings) {
-    automationNote = '黄色 = 环境相关弱信号，不单独代表自动化。窗口缩放/全屏/DevTools 会让 inner 大于 outer；软件渲染也会出现在禁用 GPU、远程桌面或虚拟机中。';
+    automationNote = '黄色 = 环境相关弱信号，不单独代表自动化。软件渲染也会出现在禁用 GPU、远程桌面或虚拟机中。';
   }
   dims.push({
     id: 'automation', group: '对抗与行为', label: '自动化检测', tag: 'Auto', cat: 'detect',
     alert: automationIssues > 0,
     summary: automationSummary,
-    principle: 'webdriver 标记、CDP/Selenium 注入痕迹、Headless UA 属于强信号；软件渲染、窗口尺寸、插件与语言数量属于环境弱信号。',
+    principle: 'webdriver 标记、CDP/Selenium 注入痕迹、Headless UA 属于强信号；软件渲染、插件与语言数量属于环境弱信号。窗口外/内尺寸受缩放、DPI 与 DevTools 影响，仅作诊断展示。',
     note: automationNote,
     two: true,
     rows: a ? [
@@ -2744,7 +2745,7 @@ function makeSupplementalDims(s) {
       {k:'插件数量', v:a.pluginCount == null ? '—' : a.pluginCount, expected:a.chromium ? '≥1（部分环境为 0）' : '不适用', w:a.chromium && a.pluginCount === 0, g:!a.chromium || a.pluginCount > 0},
       {k:'语言数量', v:a.languageCount == null ? '—' : a.languageCount, expected:'≥1', w:!a.languageCount, g:!!a.languageCount},
       {k:'通知权限', v:a.notificationPermission, expected:'任意状态'},
-      {k:'窗口尺寸', v:`外 ${a.outerWidth == null ? '—' : a.outerWidth}×${a.outerHeight == null ? '—' : a.outerHeight} / 内 ${a.innerWidth == null ? '—' : a.innerWidth}×${a.innerHeight == null ? '—' : a.innerHeight}`, expected:'通常 outer ≥ inner', w:a.sizeAnomaly},
+      {k:'窗口尺寸', v:`外 ${a.outerWidth == null ? '—' : a.outerWidth}×${a.outerHeight == null ? '—' : a.outerHeight} / 内 ${a.innerWidth == null ? '—' : a.innerWidth}×${a.innerHeight == null ? '—' : a.innerHeight}`, expected:'仅展示（缩放/DPI/DevTools 会使内大于外）'},
       {k:'页面焦点', v:a.hasFocus == null ? '—' : yesNo(a.hasFocus), expected:'页面可见时为是', w:a.hasFocus === false && document.visibilityState === 'visible'},
       {k:'WebGL 渲染器', v:a.webglRenderer || '—', expected:'非软件渲染', w:!!a.softwareRenderer, g:!!a.webglRenderer && !a.softwareRenderer},
       {k:'注入标记', v:(a.markers || []).join(', ') || '未发现', expected:'未发现', b:(a.markers || []).length > 0, g:(a.markers || []).length === 0},

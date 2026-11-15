@@ -513,7 +513,8 @@ function collectAutomation() {
   if (chromium && !chromeObject) warnings.push('缺少 window.chrome');
   if (chromium && pluginCount === 0) warnings.push('插件数量为 0');
   if (!languageCount) warnings.push('语言列表为空');
-  if (sizeAnomaly) warnings.push('窗口尺寸内大于外');
+  // outer/inner 受页面缩放、DPI、全屏与 DevTools 影响，不同浏览器坐标系也不一致，
+  // 不适合作为自动化判定；仅保留数值展示，不进入 issues/warnings。
 
   return {
     available: true,

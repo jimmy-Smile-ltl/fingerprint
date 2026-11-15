@@ -224,8 +224,9 @@ Results are grouped in the UI. Supplemental signals are deliberately **not** par
 Detection dimensions (automation, anti-fingerprinting, consistency, WebGL software rendering)
 annotate an **expected value** on every row. Only strong signals (WebDriver, headless UA,
 injected/CDC markers, Farbling) highlight a row in red and count toward the nav's anomaly total.
-Browser capability, privacy, zoom/fullscreen and mobile differences — unreadable Unmasked GPU
-info, software rendering, `outer < inner` window sizes — are amber hints, not automation evidence.
+Browser capability and privacy differences — unreadable Unmasked GPU info, software rendering —
+are amber hints, not automation evidence. Window `outer/inner` sizes are display-only: page zoom,
+DPI, fullscreen and DevTools commonly make `inner > outer`.
 
 **Battery fingerprint**: the Battery Status API exposes level, charging state and charge/discharge
 times, which sites commonly use as an environment signal. Levels outside 0–100%, negative or NaN
