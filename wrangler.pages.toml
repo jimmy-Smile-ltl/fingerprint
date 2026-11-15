@@ -1,0 +1,13 @@
+# Cloudflare Pages configuration (only for `wrangler pages deploy`).
+#
+# Pages Git integration does not need this file: set
+#   Root directory        /
+#   Build command         npm run build:pages
+#   Build output directory dist
+#
+# Direct upload:
+#   npm run build:pages
+#   npx wrangler pages deploy dist --project-name fingerprint --config wrangler.pages.toml
+name = "fingerprint"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-11-15"

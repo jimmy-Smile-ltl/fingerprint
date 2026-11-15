@@ -26,11 +26,17 @@ so headless code emits a fingerprint identical to your real browser.
 
 - **Six fingerprint dimensions** (`all_fp.js`): Canvas (basic + advanced), WebGL (hardware params + shader pixels),
   Audio, Fonts, Hardware, Timezone — works in both browser and Node.js
-- **Visual collection page** (`test_fp.html`): open in browser → auto-collect → one-click copy/download of the report
+- **Visual collection page** (`test_fp.html`): open in browser → auto-collect → browse dimensions in a side nav →
+  one-click copy/download of the report
+- **Dimension nav + principles**: each dimension explains its mechanism; a coverage map documents the L1–L6 layers
+- **TLS / JA3 recording**: the Workers `/api/tls` endpoint returns TLS version/cipher/HTTP protocol;
+  `tools/tls_ja3_capture.py` captures ClientHello locally (stdlib only) and prints JA3 / JA3 hash
 - **Prototype-chain-level env patch** (`fp_env_patch.js`): `instanceof`, `toString` and getters all align with a real browser;
   follows the "real data first, synthetic fallback" principle
 - **One-click report injection**: `injectRealFingerprint(report)` parses and injects every dimension automatically
 - **Device presets / env vars**: `--preset macos-chrome` or `FP_GPU_VENDOR=...` for quick device-profile switching
+- **Static-deploy ready**: `npm run build:pages` produces a self-contained `dist/` (vendored md5) for Cloudflare Pages
+  or any static host
 - **Self-contained cases**: runnable real-world examples under `cases/`
 
 ## Structure
@@ -40,12 +46,20 @@ fingerprint/
 ├── all_fp.js                # Fingerprint collection functions (ES module, browser & Node)
 ├── fp_env_patch.js          # Node.js environment patch (Canvas/WebGL/Audio prototype chains + injection)
 ├── fp_env_ruishu_plus.js    # Enhanced Ruishu environment (research example, see Disclaimer)
-├── test_fp.html             # Browser collection page (visual + one-click report copy)
+├── test_fp.html             # Browser collection page (dimension nav + principles + report export)
 ├── test_fp_node.js          # Node.js smoke test (--preset to switch device profiles)
 ├── test_e2e_ruishu.py       # Ruishu WAF end-to-end research script (Python)
 ├── index.js                 # Legacy browser demo (depends on fingerprintjs2 CDN)
 ├── core/                    # Per-dimension standalone modules (canvasFP/webglFP/audioFP/netFP)
-└── cases/                   # Real-world cases (one directory per case)
+├── cases/                   # Real-world cases (one directory per case)
+├── vendor/                  # Vendored blueimp-md5 (no runtime CDN dependency)
+├── worker/index.js          # Workers entry: static assets + /api/tls edge metadata
+├── tools/tls_ja3_capture.py # Local ClientHello capture → JA3 / JA3 hash (stdlib only)
+├── tools/tls_probe.py       # Trigger requests / curl_cffi ClientHello
+├── scripts/build-pages.mjs  # Static-host build (produces dist/)
+├── deploy/_headers          # Cloudflare response headers
+├── wrangler.toml            # Workers static assets (`npx wrangler deploy`)
+└── wrangler.pages.toml      # Pages CLI deploy (optional)
 ```
 
 ## Quick Start
@@ -56,7 +70,7 @@ fingerprint/
 # Serve the directory
 python -m http.server 8080
 # Open http://localhost:8080/test_fp.html
-# Wait for auto-collection → click "📥 Generate env JS" → "📋 Copy report JSON"
+# Wait for auto-collection → click "Generate env JS" → "Copy report JSON"
 # Save it as browser_fingerprint.json (gitignored — do not commit)
 ```
 
@@ -176,6 +190,90 @@ Case overview:
 4. **toString camouflage** — hijack `Function.prototype.toString` to return `[native code]`
 5. **Verify** — browser vs Node comparison, dimension by dimension (`test_fp_node.js`)
 
+## TLS / JA3 recording
+
+Browser JavaScript cannot read the TLS handshake, so TLS fingerprints are recorded in two ways:
+
+1. **Workers edge metadata**: `/api/tls` returns `tlsVersion`, `tlsCipher`, `httpProtocol`,
+   `clientTcpRtt`, `asn`, `colo`, `country`. JA3/JA4 are returned only with Cloudflare Bot Management.
+2. **Local ClientHello capture** (full JA3, stdlib only):
+
+```bash
+python tools/tls_ja3_capture.py --port 8443
+# another terminal:
+python tools/tls_probe.py --client curl_cffi --impersonate chrome110
+python tools/tls_probe.py --client requests
+curl -k https://127.0.0.1:8443
+```
+
+The capture server reads ClientHello, prints JA3 and its MD5, then closes the connection; no
+certificate or packet-capture driver is required. `requests` and `curl_cffi` normally produce
+different JA3 hashes, which makes the tool useful for verifying TLS impersonation. Note that Chrome
+randomizes ClientHello extension order, so its own JA3 can vary between connections — prefer JA4
+(Bot Management) when you need a stable comparison. The tool records client-side JA3 only; JA3S
+(server) and JA4 use different formats.
+
+References:
+
+- [JA3 fingerprint introduction (tr0y.wang)](https://www.tr0y.wang/2020/06/28/ja3/)
+- [CSDN: JA3 / TLS fingerprint article](https://blog.csdn.net/qq_38223858/article/details/145692676)
+- [Salesforce JA3 specification](https://github.com/salesforce/ja3)
+
+## Deploy the demo (Cloudflare)
+
+The demo is fully static; `vendor/blueimp-md5` is vendored, so there is no runtime CDN dependency.
+
+> ⚠️ **Root directory must be the repository root `/`, never `dist`.**
+> `dist/` is generated by the build step and does not exist when the repo is cloned;
+> setting Root directory to `dist` fails with `Failed: root directory not found`.
+
+### Option A: Workers Builds (Build command / Deploy command / Root directory)
+
+| Setting | Value |
+|---------|-------|
+| Root directory | `/` (repository root) |
+| Build command | `npm run build:pages` |
+| Deploy command | `npx wrangler deploy` |
+
+`wrangler.toml` configures Workers static assets:
+
+```toml
+name = "fingerprint"       # match the Worker name in the dashboard
+compatibility_date = "2026-11-15"
+
+[assets]
+directory = "./dist"
+```
+
+### Option B: Cloudflare Pages Git integration
+
+| Setting | Value |
+|---------|-------|
+| Framework preset | None |
+| Root directory | `/` |
+| Build command | `npm run build:pages` |
+| Build output directory | `dist` |
+
+Pages needs no Deploy command; it publishes `dist/` after the build. The deployed root `/` serves
+`dist/index.html`, copied from `test_fp.html` by the build script.
+
+### Option C: Direct upload
+
+```bash
+# Workers (uses wrangler.toml)
+npm run build:pages
+npx wrangler deploy
+
+# or Pages (uses wrangler.pages.toml)
+npm run build:pages
+npx wrangler pages project create fingerprint   # first time only
+npx wrangler pages deploy dist --project-name fingerprint --config wrangler.pages.toml
+```
+
+`deploy/_headers` adds `nosniff` / `Referrer-Policy` / permissions policy plus long-lived caching
+for `vendor/`. Only the demo page, `all_fp.js` and `vendor/` are deployed; research scripts such as
+`test_e2e_ruishu.py` are not exposed as executable endpoints.
+
 ## FAQ
 
 **Q: I see a `MODULE_TYPELESS_PACKAGE_JSON` warning at startup. Is it harmful?**
@@ -183,6 +281,11 @@ No. `all_fp.js` is an ES module but the repo's `package.json` deliberately decla
 (adding `"type": "module"` would break the CommonJS `fp_env_patch.js`), so Node detects the
 syntax automatically and prints a notice. To silence it, copy `all_fp.js` to `all_fp.mjs` and
 update the import paths — nothing else changes.
+
+**Q: Does importing `all_fp.js` into a page auto-run tests and append output to the DOM?**
+Yes, by default (so the module is self-checking when opened alone). A host page can set
+`window.__FP_NO_AUTORUN = true` before importing it to disable the auto-run and DOM output —
+`test_fp.html` does exactly that.
 
 **Q: Which Node version do I need?**
 **Node 22+** is recommended (ESM syntax detection enabled by default). On 20.x, add
@@ -194,8 +297,9 @@ pip install -r requirements.txt   # requests + curl_cffi
 ```
 
 **Q: Does test_fp.html require a local server?**
-Yes — it loads `blueimp-md5` from a CDN via an import map, which fails under `file://`:
-run `python -m http.server 8080` and open `http://localhost:8080/test_fp.html`.
+Yes. It uses ES modules and an import map; even though `blueimp-md5` is vendored under
+`vendor/`, module requests are still blocked under `file://`: run
+`python -m http.server 8080` and open `http://localhost:8080/test_fp.html`.
 
 **Q: Can I commit my real browser report?**
 No. `browser_fingerprint.json` is gitignored — it contains your device's real fingerprint.

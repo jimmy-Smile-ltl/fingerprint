@@ -5,6 +5,10 @@ __pycache__/
 # Node
 node_modules/
 
+# Static deploy build
+dist/
+.wrangler/
+
 # 测试产物（test_e2e_ruishu.py 的调试输出）
 *_output.txt
 *.log

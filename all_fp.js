@@ -978,15 +978,16 @@ async function runAllTests() {
 // 自动运行（支持和 browser）
 // 浏览器环境: 在 DOMContentLoaded 后运行
 // Node.js 环境: 直接运行（但部分指纹不可用）
-if (typeof window !== 'undefined') {
-  // 浏览器环境 — 页面加载完成后延迟 500ms 执行（FingerprintJS 推荐做法）
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(runAllTests, 500);
-  });
-} else {
+if (typeof window === 'undefined') {
   // Node.js 环境 — 直接运行测试
   runAllTests().catch(err => {
     console.error('Fingerprint test error:', err);
+  });
+} else if (!window.__FP_NO_AUTORUN) {
+  // 浏览器环境 — 页面加载完成后延迟 500ms 执行（FingerprintJS 推荐做法）
+  // 宿主页面可通过 window.__FP_NO_AUTORUN = true 关闭自动测试与 DOM 输出
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(runAllTests, 500);
   });
 }
 

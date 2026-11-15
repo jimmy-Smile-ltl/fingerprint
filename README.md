@@ -26,11 +26,16 @@
 
 - **六大维度指纹采集**（`all_fp.js`）：Canvas（基础 + 高级）、WebGL（硬件参数 + 着色器像素）、
   Audio、字体、硬件、时区，浏览器与 Node.js 双环境通用
-- **可视化采集页面**（`test_fp.html`）：浏览器打开 → 自动采集 → 一键复制/下载指纹报告
+- **可视化采集页面**（`test_fp.html`）：浏览器打开 → 自动采集 → 维度导航逐项查看 → 一键复制/下载报告
+- **维度导航 + 原理说明**：每个维度附一条技术原理；新增「指纹覆盖地图」，说明 L1–L6 分层
+- **TLS / JA3 记录**：Workers 边缘 `/api/tls` 返回 TLS 版本/套件/HTTP 协议；本地
+  `tools/tls_ja3_capture.py` 纯标准库捕获 ClientHello，输出 JA3 / JA3 hash
 - **原型链级补环境**（`fp_env_patch.js`）：`instanceof`、`toString`、getter 全对齐真实浏览器，
   遵循「真实数据优先，合成数据兜底」原则
 - **真实报告一键注入**：`injectRealFingerprint(report)` 自动解析报告并注入全部维度
 - **设备预设 / 环境变量**：`--preset macos-chrome` 或 `FP_GPU_VENDOR=...` 快速切换设备画像
+- **静态部署就绪**：`npm run build:pages` 生成自包含 `dist/`（md5 已本地化），可直接发布到
+  Cloudflare Pages 等静态托管
 - **自包含案例**：`cases/` 目录提供可运行的实际案例
 
 ## 📁 目录结构
@@ -40,12 +45,20 @@ fingerprint/
 ├── all_fp.js                # 指纹采集函数（ES Module，浏览器 & Node 双环境）
 ├── fp_env_patch.js          # Node.js 补环境（Canvas/WebGL/Audio 原型链 + 注入通道）
 ├── fp_env_ruishu_plus.js    # 瑞数增强环境（研究示例，见免责声明）
-├── test_fp.html             # 浏览器采集页面（可视化 + 一键复制报告）
+├── test_fp.html             # 浏览器采集页面（维度导航 + 原理说明 + 报告导出）
 ├── test_fp_node.js          # Node.js 冒烟测试（--preset 切换设备画像）
 ├── test_e2e_ruishu.py       # 瑞数 WAF 端到端研究脚本（Python）
 ├── index.js                 # 早期浏览器 demo（依赖 fingerprintjs2 CDN）
 ├── core/                    # 各维度独立模块（canvasFP/webglFP/audioFP/netFP）
-└── cases/                   # 实际案例（每个案例一个目录）
+├── cases/                   # 实际案例（每个案例一个目录）
+├── vendor/                  # 本地化的 blueimp-md5（在线体验不再依赖 CDN）
+├── worker/index.js          # Workers 入口：静态资源 + /api/tls 边缘 TLS 元数据
+├── tools/tls_ja3_capture.py # 本地 ClientHello 捕获 → JA3 / JA3 hash（纯标准库）
+├── tools/tls_probe.py       # 触发 requests / curl_cffi 的 ClientHello
+├── scripts/build-pages.mjs  # 静态托管构建脚本（生成 dist/）
+├── deploy/_headers          # Cloudflare 响应头
+├── wrangler.toml            # Workers 静态资源（npx wrangler deploy）
+└── wrangler.pages.toml      # Pages 命令行部署（可选）
 ```
 
 ## 🚀 快速开始
@@ -56,7 +69,7 @@ fingerprint/
 # 在本目录起一个静态服务
 python -m http.server 8080
 # 打开 http://localhost:8080/test_fp.html
-# 等待自动采集完成 → 点击「📥 生成环境 JS 文件」→「📋 复制报告 JSON」
+# 等待自动采集完成 → 点击「生成环境 JS 文件」→「复制报告 JSON」
 # 保存为 browser_fingerprint.json（已加入 .gitignore，请勿提交）
 ```
 
@@ -176,12 +189,122 @@ const result = await fp.getFingerprint();
 4. **toString 伪装** — `Function.prototype.toString` 劫持，返回 `[native code]`
 5. **验证** — 浏览器 vs Node 逐项对比（`test_fp_node.js`）
 
+## 🔐 TLS / JA3 记录
+
+浏览器 JavaScript 读不到 TLS 握手，所以 TLS 指纹分两条路记录：
+
+### 1. Workers 边缘元数据（在线）
+
+部署到 Cloudflare Workers 后，`/api/tls` 返回本次连接的：
+
+`tlsVersion` / `tlsCipher` / `httpProtocol` / `clientTcpRtt` / `asn` / `colo` / `country`
+
+若开通 **Cloudflare Bot Management**，还会返回 `ja3Hash` / `ja4`；否则 JA3/JA4 需要下面的本地捕获工具。
+
+### 2. 本地 ClientHello 捕获（完整 JA3）
+
+工具只读取 ClientHello，不完成 TLS 握手，因此不需要证书或抓包驱动：
+
+```bash
+# 终端 A：启动捕获（默认 127.0.0.1:8443）
+python tools/tls_ja3_capture.py --port 8443
+
+# 终端 B：触发要测的客户端
+python tools/tls_probe.py --client curl_cffi --impersonate chrome110
+python tools/tls_probe.py --client requests
+curl -k https://127.0.0.1:8443
+```
+
+终端 A 会打印 JA3 字符串与 hash：
+
+```text
+[JA3] 042a49f01cd801200137ec52ff0018fc
+      ja3: 771,4865-4866-...,23-5-10-...,29-23-24,0
+      sni: example.com | alpn: h2,http/1.1 | versions: TLS1.3,TLS1.2
+```
+
+- `requests` 与 `curl_cffi` 的 JA3 hash 通常不同，可用于验证 TLS 伪装是否生效
+- **Chrome 会随机化 ClientHello 扩展顺序**，同一台 Chrome 的 JA3 也可能每次不同；需要稳定比对时优先看 JA4，或使用 curl_cffi 这类固定指纹客户端
+- 本工具输出**客户端 JA3**；JA3S（服务端）与 JA4 的计算规则不同，未包含在内
+- Windows 下如果没有 `python` 命令，用 `py` 替代（例如 `py tools/tls_ja3_capture.py --port 8443`）
+- 对照案例：`cases/08_tls_fingerprint/`
+
+### 参考资料
+
+- [JA3 指纹介绍与实现（tr0y.wang）](https://www.tr0y.wang/2020/06/28/ja3/)
+- [CSDN：JA3 / TLS 指纹相关文章](https://blog.csdn.net/qq_38223858/article/details/145692676)
+- [Salesforce JA3 规范与实现](https://github.com/salesforce/ja3)
+
+## ☁️ 部署在线体验（Cloudflare）
+
+采集页是纯静态页面，`vendor/blueimp-md5` 已本地化，不依赖运行时 CDN。
+
+> ⚠️ **Root directory 必须是仓库根目录 `/`，不能填 `dist`。**
+> `dist/` 是构建产物，克隆仓库时还不存在；把 Root directory 设成 `dist` 会直接报
+> `Failed: root directory not found`。
+
+### 方式 A：Workers Builds（控制台字段：Build command / Deploy command / Root directory）
+
+这是 Cloudflare 新版 Workers & Pages 的 Git 集成界面。填写：
+
+| 配置 | 值 |
+|------|-----|
+| Root directory | `/`（仓库根目录） |
+| Build command | `npm run build:pages` |
+| Deploy command | `npx wrangler deploy` |
+
+`wrangler.toml` 已配置 Workers 静态资源：
+
+```toml
+name = "fingerprint"       # 改成控制台里的 Worker 名
+compatibility_date = "2026-11-15"
+
+[assets]
+directory = "./dist"
+```
+
+构建流程：克隆仓库 → `npm run build:pages` 生成 `dist/` → `npx wrangler deploy` 上传静态资源。
+
+### 方式 B：Cloudflare Pages Git 集成
+
+在 Pages 里连接仓库，填写：
+
+| 配置 | 值 |
+|------|-----|
+| Framework preset | None |
+| Root directory | `/` |
+| Build command | `npm run build:pages` |
+| Build output directory | `dist` |
+
+Pages 不需要 Deploy command；构建完成后自动发布 `dist/`。部署后的根路径 `/` 即 `dist/index.html`。
+
+### 方式 C：命令行直接上传
+
+```bash
+# Workers（使用 wrangler.toml）
+npm run build:pages
+npx wrangler deploy
+
+# 或 Pages（使用 wrangler.pages.toml）
+npm run build:pages
+npx wrangler pages project create fingerprint   # 首次创建
+npx wrangler pages deploy dist --project-name fingerprint --config wrangler.pages.toml
+```
+
+- `deploy/_headers` 会随构建复制，提供 `nosniff` / `Referrer-Policy` / 权限策略，以及 `vendor/` 长缓存
+- 国内访问：`*.pages.dev` / `*.workers.dev` 一般可访问；自定义域名按 Cloudflare 流程绑定。大陆节点加速通常需要企业版中国网络，普通免费计划使用全球 CDN
+- 构建产物只包含采集页、`all_fp.js` 与 `vendor/`；`test_e2e_ruishu.py` 等研究脚本不会被上传为可执行接口
+
 ## ❓ FAQ
 
 **Q: 运行时出现 `MODULE_TYPELESS_PACKAGE_JSON` 警告？**
 无害。`all_fp.js` 是 ES Module 但仓库 `package.json` 没有声明 `"type": "module"`
 （声明了会让 CommonJS 的 `fp_env_patch.js` 失效），Node 靠语法探测自动识别，只是顺手警告。
 想消除它：把 `all_fp.js` 复制为 `all_fp.mjs` 并改 import 路径即可，不复制也不影响任何功能。
+
+**Q: 在页面里引入 `all_fp.js` 会自动跑测试并往页面追加输出吗？**
+默认会（方便单独打开时自检）。宿主页面可在 import 之前设置 `window.__FP_NO_AUTORUN = true`，
+关闭自动测试与 DOM 输出——`test_fp.html` 就是这么做的。
 
 **Q: Node 版本要求？**
 推荐 **Node 22+**（默认开启 ESM 语法探测）。20.x 需加 `--experimental-detect-module` 标志。
@@ -192,8 +315,9 @@ pip install -r requirements.txt   # requests + curl_cffi
 ```
 
 **Q: test_fp.html 必须起服务吗？**
-是的，它通过 import map 从 CDN 加载 `blueimp-md5`，`file://` 协议下模块加载会失败：
-`python -m http.server 8080` 后访问 `http://localhost:8080/test_fp.html`。
+是的。页面使用 ES module + import map；虽然 `blueimp-md5` 已本地化到 `vendor/`，`file://`
+下模块请求仍会被 CORS 拦截：先 `python -m http.server 8080`，再访问
+`http://localhost:8080/test_fp.html`。
 
 **Q: 真实浏览器报告可以提交吗？**
 不要。`browser_fingerprint.json` 已加入 `.gitignore`——它含你设备的真实指纹。

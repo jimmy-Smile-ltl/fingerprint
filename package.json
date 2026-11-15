@@ -4,7 +4,8 @@
   "description": "Browser fingerprint collection & Node.js environment emulation toolkit — Canvas / WebGL / Audio / Fonts / Hardware / Timezone",
   "main": "all_fp.js",
   "scripts": {
-    "test": "node test_fp_node.js"
+    "test": "node test_fp_node.js",
+    "build:pages": "node scripts/build-pages.mjs"
   },
   "keywords": [
     "browser-fingerprint",

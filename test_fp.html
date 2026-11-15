@@ -4,142 +4,488 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>浏览器指纹实验室 — Canvas · WebGL · Audio · Fonts</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23f2f3ee'/%3E%3Crect x='3' y='3' width='3' height='10' fill='%23161a14'/%3E%3Crect x='8' y='3' width='2' height='10' fill='%231f3fd1'/%3E%3Crect x='12' y='3' width='1' height='10' fill='%23161a14'/%3E%3C/svg%3E">
 <style>
   :root {
-    --bg: #0a0e14; --surface: #12171f; --surface2: #1a212e; --border: #252d3a;
-    --text: #e4e8ee; --text2: #9aa4b5; --text3: #5e6d80;
-    --blue: #60a5fa; --green: #4ade80; --amber: #fbbf24; --red: #f87171;
-    --purple: #c084fc; --cyan: #22d3ee;
+    --paper: #f2f3ee;
+    --paper-2: #f8f9f4;
+    --ink: #161a14;
+    --ink-2: #4c5348;
+    --ink-3: #646b5e;
+    --rule: #c9cec2;
+    --rule-2: #a9b0a2;
+    --rule-faint: rgba(22,26,20,.06);
+    --accent: #1f3fd1;
+    --accent-ink: #172f9e;
+    --accent-soft: #e5e8f8;
+    --ok: #1f6b45;
+    --warn: #8a5a00;
+    --bad: #a62b1f;
+    --violet: #5b3fa8;
+    --mono: "Cascadia Code", "JetBrains Mono", "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+    --sans: "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", "Segoe UI", system-ui, sans-serif;
+    --display: "Bahnschrift", "DIN Alternate", "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { font-size: 17px; }
+  html { font-size: 16px; scroll-behavior: smooth; }
   body {
-    font-family: 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', system-ui, sans-serif;
-    background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.7;
+    font-family: var(--sans); font-size: 16px; line-height: 1.7; color: var(--ink);
+    background-color: var(--paper);
+    background-image: linear-gradient(var(--rule-faint) 1px, transparent 1px),
+                      linear-gradient(90deg, var(--rule-faint) 1px, transparent 1px);
+    background-size: 32px 32px;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
   }
-  body::before {
-    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(59,130,246,.06), transparent),
-                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(168,85,247,.05), transparent);
-  }
-  .app { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; padding: 24px 20px 60px; }
+  ::selection { background: var(--accent); color: #fff; }
+  .app { max-width: 1180px; margin: 0 auto; padding: 0 28px 64px; }
 
-  /* Header */
-  .header { text-align: center; padding: 32px 0 24px; }
-  .header .icon { font-size: 48px; margin-bottom: 8px; }
-  .header h1 { font-size: 30px; font-weight: 800; letter-spacing: -.02em;
-    background: linear-gradient(135deg, var(--blue), var(--cyan), var(--purple));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-  .header .sub { margin-top: 4px; font-size: 14px; color: var(--text3); }
+  /* ===== Masthead ===== */
+  .masthead { padding-top: 26px; }
+  .masthead-bar {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 20px;
+    padding-bottom: 10px; border-bottom: 1.5px solid var(--ink);
+    font-family: var(--mono); font-size: 11px; letter-spacing: .07em; color: var(--ink-3);
+  }
+  .masthead-bar .brand { color: var(--ink); font-weight: 600; }
+  .masthead-bar .brand b { color: var(--accent); font-weight: 700; }
+  .masthead-main {
+    display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 28px;
+    align-items: end; padding: 34px 0 30px;
+  }
+  .masthead h1 {
+    font-family: var(--display); font-size: clamp(36px, 5.4vw, 56px); line-height: 1.04;
+    font-weight: 600; letter-spacing: -.02em; text-wrap: balance;
+  }
+  .masthead .lede { margin-top: 14px; max-width: 54ch; font-size: 15.5px; line-height: 1.75; color: var(--ink-2); }
+  .stamp {
+    font-family: var(--mono); font-size: 11px; line-height: 1.7; letter-spacing: .05em;
+    color: var(--ink-2); border: 1px solid var(--ink-2); padding: 8px 12px;
+    text-align: center; transform: rotate(-1.2deg); white-space: nowrap;
+  }
 
-  /* Hero */
-  .hero {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-    padding: 28px 24px; text-align: center; margin-bottom: 20px; position: relative; overflow: hidden;
+  /* ===== Specimen ===== */
+  .specimen {
+    background: var(--paper-2); border: 1px solid var(--ink); border-left: 4px solid var(--accent);
+    box-shadow: 6px 6px 0 rgba(22,26,20,.07);
+    padding: 20px 24px 18px; margin-bottom: 22px;
   }
-  .hero::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, var(--blue), var(--cyan), var(--purple)); }
-  .hero .label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--text3); margin-bottom: 10px; }
-  .hero .id {
-    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-    font-size: clamp(20px, 4.5vw, 32px); font-weight: 700; color: var(--text);
-    word-break: break-all; line-height: 1.3; padding: 6px 22px;
-    background: var(--surface2); border-radius: 8px; display: inline-block; transition: all .3s;
+  .specimen-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  .specimen-label { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--ink-2); }
+  .specimen-label::before {
+    content: ""; display: inline-block; width: 7px; height: 7px;
+    background: var(--accent); margin-right: 9px; vertical-align: 1px;
   }
-  .hero .id.pending { color: var(--text3); }
-  .hero .meta { display: flex; gap: 30px; justify-content: center; margin-top: 14px; font-size: 14px; color: var(--text3); flex-wrap: wrap; }
-  .hero .meta span { display: flex; align-items: center; gap: 6px; }
-  .hero .meta .v { color: var(--text2); font-weight: 600; }
+  .specimen-state {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--ink-3);
+    border: 1px solid var(--rule); padding: 3px 8px; white-space: nowrap;
+  }
+  .specimen-id {
+    font-family: var(--mono); font-size: clamp(22px, 4.2vw, 40px); font-weight: 600;
+    line-height: 1.18; letter-spacing: .005em; word-break: break-all;
+    padding: 12px 0 14px; border-bottom: 1px solid var(--rule);
+  }
+  .specimen-id.pending { color: var(--ink-3); }
+  .barcode { display: flex; align-items: flex-end; gap: 3px; height: 34px; padding: 10px 0 2px; overflow: hidden; }
+  .barcode i { display: block; height: 100%; background: var(--ink); opacity: .78; transform-origin: bottom; animation: bar-in .38s cubic-bezier(.2,.7,.1,1) both; }
+  .barcode.is-placeholder i { opacity: .12; animation: none; }
+  @keyframes bar-in { from { transform: scaleY(.15); opacity: 0; } to { transform: scaleY(1); opacity: .78; } }
+  .specimen-meta {
+    display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
+    margin: 0; border-top: 1px solid var(--rule);
+  }
+  .specimen-meta > div { padding: 11px 18px 2px 0; border-right: 1px solid var(--rule); }
+  .specimen-meta > div:last-child { border-right: 0; }
+  .specimen-meta dt { font-size: 11px; letter-spacing: .06em; color: var(--ink-3); }
+  .specimen-meta dd { margin: 1px 0 0; font-family: var(--mono); font-size: 14px; color: var(--ink); }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
   .pending-anim { animation: pulse 1.5s ease-in-out infinite; }
 
-  /* Tabs */
-  .tabs { display: flex; gap: 0; justify-content: center; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
+  /* ===== Tabs ===== */
+  .tabs { display: flex; gap: 30px; border-bottom: 1px solid var(--rule-2); margin: 6px 0 18px; }
   .tabs button {
-    padding: 12px 28px; border: none; background: none; color: var(--text3);
-    cursor: pointer; font-size: 15px; font-weight: 600; transition: all .2s;
-    border-bottom: 2px solid transparent; margin-bottom: -2px; position: relative;
+    appearance: none; background: none; border: 0; border-bottom: 2px solid transparent;
+    margin-bottom: -1px; padding: 11px 0 9px; font-family: var(--sans);
+    font-size: 14px; font-weight: 600; color: var(--ink-3); cursor: pointer;
+    transition: color .15s, border-color .15s;
   }
-  .tabs button:hover { color: var(--text2); }
-  .tabs button.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .tabs button:hover { color: var(--ink-2); }
+  .tabs button.active { color: var(--ink); border-bottom-color: var(--accent); }
 
-  /* Controls */
-  .controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
-  .controls button {
-    padding: 10px 22px; border: 1px solid var(--border); border-radius: 8px;
-    background: var(--surface2); color: var(--text2); cursor: pointer;
-    font-size: 14px; font-weight: 500; transition: all .2s; white-space: nowrap;
+  /* ===== Controls ===== */
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 18px; }
+  .controls .spacer { flex: 1 1 auto; }
+  .btn {
+    appearance: none; font-family: var(--sans); font-size: 13px; font-weight: 600;
+    line-height: 1; padding: 11px 15px; border: 1px solid var(--rule-2); border-radius: 2px;
+    background: transparent; color: var(--ink-2); cursor: pointer; white-space: nowrap;
+    transition: background .15s, border-color .15s, color .15s;
   }
-  .controls button:hover { background: #252e3e; border-color: #4a5568; color: var(--text); }
-  .controls button.primary { background: linear-gradient(135deg, #2563eb, #4f46e5); border-color: transparent; color: #fff; font-weight: 700; }
-  .controls button.primary:disabled { opacity: .45; cursor: not-allowed; }
+  .btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.primary { background: var(--ink); border-color: var(--ink); color: var(--paper-2); }
+  .btn.primary:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:disabled { opacity: .45; cursor: not-allowed; }
+  .btn.env { border-color: var(--ok); color: var(--ok); }
+  .btn.env:hover { background: rgba(31,107,69,.08); border-color: var(--ok); color: var(--ok); }
+  .btn.ghost { border-color: transparent; color: var(--ink-3); }
+  .btn.ghost:hover { border-color: var(--rule-2); background: transparent; color: var(--ink); }
+  .btn-group { display: flex; border: 1px solid var(--rule-2); border-radius: 2px; overflow: hidden; max-width: 100%; }
+  .btn-group .btn { border: 0; border-right: 1px solid var(--rule); border-radius: 0; padding: 10px 12px; font-weight: 500; color: var(--ink-2); }
+  .btn-group .btn:last-child { border-right: 0; }
+  .btn-group .btn:hover { background: var(--accent-soft); }
 
-  /* Status */
-  #status { text-align: center; padding: 10px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; font-weight: 600; display: none; }
-  #status.running { display: block; background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.25); color: var(--blue); }
-  #status.done    { display: block; background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.2); color: var(--green); }
-  #status.error   { display: block; background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2); color: var(--red); }
-
-  /* Grid */
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; margin-bottom: 16px; }
-
-  /* Card */
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: all .2s; }
-  .card:hover { border-color: #334155; }
-  .card-header {
-    padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;
-    cursor: pointer; user-select: none; border-bottom: 1px solid transparent; transition: .2s;
+  /* ===== Status ===== */
+  #status {
+    display: none; margin: 0 0 16px; padding: 10px 14px;
+    border-left: 3px solid var(--rule-2); background: var(--paper-2);
+    color: var(--ink-2); font-size: 13.5px; font-weight: 600; line-height: 1.5;
   }
-  .card-header:hover { background: rgba(255,255,255,.015); }
-  .card.open .card-header { border-bottom-color: var(--border); }
-  .card-header h3 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-  .card-header .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .card-header .arrow { font-size: 14px; color: var(--text3); transition: .25s; margin-left: 8px; }
-  .card.open .card-header .arrow { transform: rotate(180deg); }
+  #status.running { display: block; border-left-color: var(--accent); color: var(--accent-ink); }
+  #status.done    { display: block; border-left-color: var(--ok); color: var(--ok); }
+  #status.error   { display: block; border-left-color: var(--bad); color: var(--bad); }
 
-  .card-body { max-height: 0; overflow: hidden; transition: max-height .4s ease; }
-  .card.open .card-body { max-height: 4000px; }
-  .card-body-inner { padding: 8px 18px 16px; }
+  /* ===== Results: dimension navigator + detail ===== */
+  .results-shell {
+    display: grid; grid-template-columns: 230px minmax(0,1fr);
+    gap: 22px; align-items: start;
+  }
+  .fp-nav { border-top: 1.5px solid var(--ink); position: sticky; top: 18px; min-width: 0; }
+  .fp-nav-head {
+    display: flex; justify-content: space-between; gap: 8px;
+    padding: 9px 2px; border-bottom: 1px solid var(--rule);
+    font-size: 11px; letter-spacing: .06em; color: var(--ink-3);
+  }
+  .fp-nav-hint { color: var(--rule-2); }
+  .fp-nav-item {
+    display: grid; grid-template-columns: 8px minmax(0,1fr); gap: 2px 9px; align-items: center;
+    width: 100%; padding: 10px 9px; border: 0;
+    border-bottom: 1px solid var(--rule-faint); background: transparent;
+    text-align: left; cursor: pointer; transition: background .15s, box-shadow .15s;
+  }
+  .fp-nav-item:hover { background: var(--accent-soft); }
+  .fp-nav-item.active { background: var(--paper-2); box-shadow: inset 3px 0 0 var(--accent); }
+  .fp-nav-swatch { width: 7px; height: 7px; background: var(--rule-2); }
+  .fp-nav-swatch.canvas { background: var(--ok); }
+  .fp-nav-swatch.webgl  { background: var(--accent); }
+  .fp-nav-swatch.audio  { background: var(--warn); }
+  .fp-nav-swatch.system { background: var(--violet); }
+  .fp-nav-swatch.detect { background: var(--bad); }
+  .fp-nav-label { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .fp-nav-summary {
+    grid-column: 2; font-family: var(--mono); font-size: 11px; line-height: 1.4;
+    color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
 
-  .row { display: flex; justify-content: space-between; align-items: flex-start; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.025); gap: 14px; }
-  .row:last-child { border-bottom: none; }
-  .row .k { color: var(--text3); font-size: 13px; flex-shrink: 0; min-width: 90px; font-weight: 500; }
-  .row .v { font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; font-size: 13px; text-align: right; word-break: break-all; color: var(--text2); line-height: 1.5; }
-  .row .v.warn { color: var(--amber); } .row .v.ok { color: var(--green); } .row .v.bad { color: var(--red); } .row .v.hl { color: var(--blue); }
+  .fp-detail { min-width: 0; background: var(--paper-2); border: 1px solid var(--rule); }
+  .detail-bar { height: 3px; background: var(--rule-2); }
+  .detail-bar.cat-canvas { background: var(--ok); }
+  .detail-bar.cat-webgl  { background: var(--accent); }
+  .detail-bar.cat-audio  { background: var(--warn); }
+  .detail-bar.cat-system { background: var(--violet); }
+  .detail-bar.cat-detect { background: var(--bad); }
+  .detail-inner { padding: 18px 22px 22px; }
+  .detail-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .detail-count { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+  .detail-inner h3 {
+    font-family: var(--display); font-size: clamp(24px, 3vw, 32px); line-height: 1.18;
+    font-weight: 600; letter-spacing: -.01em; margin: 8px 0 10px;
+  }
+  .principle {
+    display: flex; gap: 10px; align-items: baseline; max-width: none;
+    background: var(--paper); border-left: 2px solid var(--rule-2);
+    padding: 8px 12px; margin: 0 0 14px;
+    font-size: 13px; line-height: 1.7; color: var(--ink-2);
+  }
+  .principle-label {
+    flex: 0 0 auto; font-family: var(--mono); font-size: 10px; letter-spacing: .08em;
+    color: var(--ink-3); border: 1px solid var(--rule); padding: 1px 5px; line-height: 1.5;
+  }
+  .detail-note {
+    font-size: 12.5px; line-height: 1.7; color: var(--warn);
+    background: rgba(138,90,0,.06); border-left: 2px solid var(--warn);
+    padding: 8px 12px; margin: 0 0 14px;
+  }
+  .detail-rows { margin: 0; border-top: 1px solid var(--rule); }
+  .detail-rows.two-col { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); column-gap: 30px; }
+  .drow {
+    display: grid; grid-template-columns: 150px minmax(0,1fr); gap: 14px;
+    padding: 9px 0; border-bottom: 1px solid var(--rule-faint);
+  }
+  .drow dt { font-size: 12px; line-height: 1.55; color: var(--ink-3); }
+  .drow dd {
+    margin: 0; font-family: var(--mono); font-size: 12.5px; line-height: 1.55;
+    color: var(--ink-2); text-align: right; word-break: break-all;
+  }
+  .drow dd.warn { color: var(--warn); }
+  .drow dd.ok   { color: var(--ok); }
+  .drow dd.bad  { color: var(--bad); }
+  .drow dd.hl   { color: var(--accent-ink); }
 
-  .dot.canvas { background: var(--green); box-shadow: 0 0 8px rgba(74,222,128,.5); }
-  .dot.webgl  { background: var(--blue); box-shadow: 0 0 8px rgba(96,165,250,.5); }
-  .dot.audio  { background: var(--amber); box-shadow: 0 0 8px rgba(251,191,36,.5); }
-  .dot.system { background: var(--purple); box-shadow: 0 0 8px rgba(192,132,252,.5); }
-  .dot.detect { background: var(--red); box-shadow: 0 0 8px rgba(248,113,113,.5); }
+  .detail-columns { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 22px; align-items: start; }
+  .ext-box { border: 1px solid var(--rule); background: var(--paper); min-width: 0; }
+  .ext-head {
+    display: flex; justify-content: space-between; gap: 8px;
+    padding: 8px 10px; border-bottom: 1px solid var(--rule);
+    font-size: 11px; letter-spacing: .05em; color: var(--ink-3);
+  }
+  .ext-head span { font-family: var(--mono); color: var(--ink-2); }
+  .ext-list { display: flex; flex-direction: column; max-height: 260px; overflow: auto; padding: 5px 10px; }
+  .ext-list span {
+    display: block; flex: 0 0 auto;
+    font-family: var(--mono); font-size: 11px; line-height: 1.65; color: var(--ink-2);
+    border-bottom: 1px solid var(--rule-faint); padding: 2px 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ext-empty { padding: 10px; font-size: 12px; color: var(--ink-3); }
 
-  .tag { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: 700; letter-spacing: .03em; }
-  .tag.canvas { background: rgba(74,222,128,.13); color: var(--green); }
-  .tag.webgl  { background: rgba(96,165,250,.13); color: var(--blue); }
-  .tag.audio  { background: rgba(251,191,36,.13); color: var(--amber); }
-  .tag.system { background: rgba(192,132,252,.13); color: var(--purple); }
-  .tag.detect { background: rgba(248,113,113,.13); color: var(--red); }
+  .data-block { margin-top: 16px; border: 1px solid var(--rule); background: var(--ink); }
+  .data-block-head {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,.12);
+    font-family: var(--mono); font-size: 11px; color: #aeb5a6;
+    cursor: pointer; user-select: none; list-style: none;
+  }
+  .data-block-head::-webkit-details-marker { display: none; }
+  .data-block-head::after { content: "+"; color: #7f8a7b; }
+  .data-block[open] .data-block-head::after { content: "−"; }
+  .data-block pre {
+    margin: 0; padding: 12px; max-height: 170px; overflow: auto;
+    color: #e9ebdf; font-family: var(--mono); font-size: 11.5px; line-height: 1.55;
+    white-space: pre-wrap; word-break: break-all;
+  }
+  .font-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+  .font-chip {
+    font-family: var(--mono); font-size: 11px; color: var(--ink-2);
+    border: 1px solid var(--rule); background: var(--paper); padding: 2px 7px;
+  }
+  .detail-empty {
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    gap: 6px; min-height: 440px; padding: 30px; text-align: center; color: var(--ink-3);
+  }
+  .detail-empty-title { font-weight: 700; color: var(--ink-2); }
 
-  /* Guide section */
-  .guide { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px 28px; margin-bottom: 16px; }
-  .guide h2 { font-size: 20px; font-weight: 800; margin-bottom: 16px; color: var(--text); }
-  .guide h3 { font-size: 16px; font-weight: 700; margin: 18px 0 8px; color: var(--blue); }
-  .guide p, .guide li { font-size: 14px; color: var(--text2); margin-bottom: 6px; }
-  .guide ul { padding-left: 24px; margin-bottom: 10px; }
-  .guide table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
-  .guide th { background: var(--surface2); padding: 10px 14px; text-align: left; font-weight: 700; color: var(--text); border-bottom: 2px solid var(--border); }
-  .guide td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.04); color: var(--text2); }
-  .guide code { background: var(--surface2); padding: 2px 7px; border-radius: 4px; font-size: 13px; color: var(--cyan); font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; }
-  .guide pre { background: var(--surface2); padding: 16px 20px; border-radius: 8px; overflow-x: auto; margin: 10px 0; font-size: 13px; line-height: 1.5; }
-  .guide pre code { background: none; padding: 0; color: var(--text); }
+  .tag {
+    display: inline-block; padding: 2px 7px; border: 1px solid currentColor; border-radius: 2px;
+    font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: .03em; line-height: 1.5;
+  }
+  .tag.canvas { color: var(--ok); }
+  .tag.webgl  { color: var(--accent-ink); }
+  .tag.audio  { color: var(--warn); }
+  .tag.system { color: var(--violet); }
+  .tag.detect { color: var(--bad); }
 
-  .footer { text-align: center; padding: 30px 0 10px; font-size: 13px; color: var(--text3); }
-  .footer a { color: var(--blue); text-decoration: none; }
+  /* ===== Coverage map ===== */
+  .coverage { max-width: 1040px; }
+  .coverage-head h2 {
+    font-family: var(--display); font-size: clamp(26px, 3.4vw, 36px); line-height: 1.16;
+    font-weight: 600; letter-spacing: -.01em; margin: 0 0 10px;
+  }
+  .coverage-head p { max-width: 76ch; font-size: 14.5px; line-height: 1.75; color: var(--ink-2); }
+  .layer-map { margin: 22px 0 20px; border-top: 1.5px solid var(--ink); }
+  .layer-row {
+    display: grid; grid-template-columns: 34px 82px minmax(0,1fr) auto;
+    gap: 12px; align-items: center; padding: 9px 2px;
+    border-bottom: 1px solid var(--rule); font-size: 12.5px;
+  }
+  .layer-row.is-current { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+  .layer-id { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+  .layer-name { font-weight: 700; color: var(--ink); }
+  .layer-desc { color: var(--ink-2); font-family: var(--mono); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .layer-flag {
+    font-family: var(--mono); font-size: 10px; line-height: 1.5; letter-spacing: .03em;
+    padding: 2px 7px; border: 1px solid currentColor; white-space: nowrap;
+  }
+  .flag-page { color: var(--accent-ink); }
+  .flag-js   { color: var(--ink-3); }
+  .flag-case { color: var(--violet); }
 
+  .coverage-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; align-items: start; }
+  .cov-card { background: var(--paper-2); border: 1px solid var(--rule); padding: 14px 16px; }
+  .cov-card h3 { font-size: 14px; font-weight: 700; margin: 0 0 8px; }
+  .cov-card ul { list-style: none; padding: 0; margin: 0; }
+  .cov-card li {
+    position: relative; padding-left: 12px; margin: 0 0 5px;
+    font-size: 12.5px; line-height: 1.6; color: var(--ink-2);
+  }
+  .cov-card li::before { content: ""; position: absolute; left: 0; top: .68em; width: 4px; height: 4px; background: var(--rule-2); }
+  .cov-links { margin-top: 10px; font-size: 11.5px; }
+  .cov-links a { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 2px; margin-right: 10px; }
+  .coverage-callout {
+    margin-top: 16px; padding: 14px 16px; background: rgba(31,63,209,.05);
+    border-left: 3px solid var(--accent);
+  }
+  .coverage-callout strong { display: block; font-size: 13.5px; margin-bottom: 4px; }
+  .coverage-callout p { font-size: 13px; line-height: 1.7; color: var(--ink-2); max-width: 80ch; }
+
+  /* ===== TLS / JA3 ===== */
+  .tls-layout { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; align-items: start; }
+  .tls-panel { background: var(--paper-2); border: 1px solid var(--rule); padding: 16px 18px; min-width: 0; }
+  .tls-span { grid-column: 1 / -1; }
+  .tls-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; color: var(--ink-3); margin-bottom: 6px; }
+  .tls-panel h2 { font-family: var(--display); font-size: clamp(24px, 2.6vw, 30px); line-height: 1.2; font-weight: 600; margin: 0 0 8px; }
+  .tls-panel h3 { font-size: 16px; font-weight: 700; margin: 0 0 8px; }
+  .tls-panel p { font-size: 13px; line-height: 1.7; color: var(--ink-2); margin-bottom: 10px; }
+  .tls-actions { margin: 12px 0; }
+  .tls-result { border-top: 1px solid var(--rule); padding-top: 10px; font-family: var(--mono); font-size: 12px; color: var(--ink-2); word-break: break-all; }
+  .tls-result .drow { grid-template-columns: 140px minmax(0,1fr); }
+  .tls-code {
+    background: var(--ink); color: #e9ebdf; padding: 12px 14px; margin: 8px 0 10px;
+    font-family: var(--mono); font-size: 11.5px; line-height: 1.6;
+    overflow-x: auto; white-space: pre;
+  }
+  .tls-hint, .tls-note { font-size: 12px; line-height: 1.7; color: var(--ink-3); }
+  .tls-hint a { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 2px; }
+  .tls-note {
+    margin-top: 10px; padding: 9px 12px; background: rgba(138,90,0,.06);
+    border-left: 2px solid var(--warn); color: var(--ink-2);
+  }
+  .tls-fallback { color: var(--warn); font-size: 12.5px; line-height: 1.7; }
+
+  /* ===== Guide ===== */
+  .guide-layout {
+    display: grid; grid-template-columns: 210px minmax(0,1fr);
+    gap: 36px; align-items: start;
+    border-top: 1px solid var(--ink); padding-top: 24px;
+  }
+  .guide-aside { position: sticky; top: 20px; }
+  .guide-aside-title {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--ink-3);
+    padding-bottom: 8px; border-bottom: 1px solid var(--rule); margin-bottom: 4px;
+  }
+  .guide-aside nav a {
+    display: block; padding: 7px 0; border-bottom: 1px solid var(--rule-faint);
+    font-size: 12.5px; color: var(--ink-2); text-decoration: none;
+  }
+  .guide-aside nav a:hover { color: var(--accent-ink); }
+  .guide-back {
+    appearance: none; width: 100%; margin-top: 14px; padding: 8px 10px;
+    background: none; border: 1px solid var(--rule-2);
+    font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--ink-2); cursor: pointer;
+  }
+  .guide-back:hover { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-soft); }
+  .guide { min-width: 0; }
+  .guide h2 {
+    font-family: var(--display); font-size: clamp(26px, 3.2vw, 34px); line-height: 1.18;
+    font-weight: 600; letter-spacing: -.01em; margin: 0 0 12px;
+  }
+  .guide h3 { font-size: 18px; font-weight: 700; margin: 34px 0 10px; padding-top: 14px; border-top: 1px solid var(--rule); }
+  .guide h4 { font-size: 15px; font-weight: 700; margin: 22px 0 8px; color: var(--ink); }
+  .guide h2[id], .guide h3[id] { scroll-margin-top: 24px; }
+  .guide p, .guide li { max-width: 74ch; font-size: 14.5px; line-height: 1.75; color: var(--ink-2); margin-bottom: 8px; }
+  .guide ul { padding-left: 1.2em; margin: 0 0 12px; }
+  .guide li::marker { color: var(--accent); }
+  .guide b { color: var(--ink); font-weight: 700; }
+  .guide code {
+    font-family: var(--mono); font-size: 12.5px; background: var(--accent-soft);
+    color: var(--accent-ink); padding: 1.5px 5px; border-radius: 2px;
+  }
+  .guide pre {
+    background: var(--ink); color: #e9ebdf; padding: 18px 20px; margin: 14px 0 18px;
+    overflow: auto; border-radius: 2px; box-shadow: 4px 4px 0 rgba(22,26,20,.1);
+    line-height: 1.55; max-width: 100%; max-height: 480px;
+  }
+  .guide pre code { background: none; color: inherit; padding: 0; font-size: 12.5px; }
+  .table-wrap { overflow-x: auto; margin: 14px 0 20px; border-top: 1.5px solid var(--ink); }
+  .guide table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px; }
+  .guide th {
+    text-align: left; font-size: 12px; font-weight: 700; color: var(--ink-2);
+    padding: 9px 12px 9px 0; border-bottom: 1px solid var(--ink); white-space: nowrap;
+  }
+  .guide td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--rule); color: var(--ink-2); vertical-align: top; line-height: 1.6; }
+  .guide tr:hover td { background: rgba(22,26,20,.02); }
+
+  /* ===== Env panel ===== */
+  .env-panel { margin-bottom: 24px; border-top: 1px solid var(--ink); padding-top: 20px; }
+  .panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+  .panel-head h2 { font-family: var(--display); font-size: 24px; font-weight: 600; margin: 0; }
+  .panel-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .env-note {
+    font-size: 13px; line-height: 1.7; color: var(--ink-2);
+    background: rgba(138,90,0,.07); border-left: 3px solid var(--warn);
+    padding: 10px 14px; margin-bottom: 12px;
+  }
+  .env-code {
+    background: var(--ink); color: #e9ebdf; max-height: 520px; overflow: auto;
+    padding: 18px 20px; border-radius: 2px; white-space: pre;
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.55;
+  }
+  .env-code code { font-family: inherit; }
+
+  .footer {
+    margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--rule);
+    font-family: var(--mono); font-size: 12px; line-height: 1.9; color: var(--ink-3);
+  }
+  .footer a { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 2px; }
+
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+
+  @media (max-width: 1100px) {
+    .coverage-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  }
+  @media (max-width: 1000px) {
+    .results-shell { grid-template-columns: 1fr; }
+    .fp-nav { position: static; }
+    #fp-nav-items { display: flex; overflow-x: auto; scrollbar-width: none; }
+    #fp-nav-items::-webkit-scrollbar { display: none; }
+    .fp-nav-item { flex: 0 0 auto; width: auto; min-width: 132px; border-bottom: 1px solid var(--rule); }
+    .fp-nav-item.active { box-shadow: none; border-bottom-color: var(--accent); }
+    .fp-nav-summary { white-space: nowrap; }
+    .detail-columns { grid-template-columns: 1fr; }
+    .guide-layout { grid-template-columns: 1fr; }
+    .guide-aside { position: static; }
+    .guide-aside nav { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+    .guide-aside a { border: 0; padding: 2px 0; }
+  }
+  @media (max-width: 860px) {
+    .masthead-main { grid-template-columns: 1fr; align-items: start; }
+    .stamp { display: none; }
+    .specimen-meta { grid-template-columns: 1fr; }
+    .specimen-meta > div { border-right: 0; border-bottom: 1px solid var(--rule); padding: 8px 0; }
+    .specimen-meta > div:last-child { border-bottom: 0; }
+    .tls-layout { grid-template-columns: 1fr; }
+    .tls-span { grid-column: auto; }
+  }
+  @media (max-width: 600px) {
+    .masthead-note { display: none; }
+  }
   @media (max-width: 720px) {
-    .grid { grid-template-columns: 1fr; }
-    html { font-size: 16px; }
-    .header h1 { font-size: 24px; }
+    html { font-size: 15.5px; }
+    .app { padding: 0 18px 52px; }
+    .masthead-main { padding: 26px 0 24px; }
+    .specimen { padding: 17px 16px 15px; box-shadow: 4px 4px 0 rgba(22,26,20,.07); }
+    .specimen-state { display: none; }
+    .tabs { gap: 20px; overflow-x: auto; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tabs button { flex: 0 0 auto; white-space: nowrap; font-size: 13px; }
+    .btn-group { width: 100%; overflow-x: auto; }
+    .btn-group .btn { flex: 1 0 auto; }
+    .controls .spacer { display: none; }
+    .detail-inner { padding: 16px; }
+    .detail-inner h3 { font-size: 24px; }
+    .drow { grid-template-columns: 112px minmax(0,1fr); gap: 10px; }
+    .detail-rows.two-col { grid-template-columns: 1fr; }
+    .coverage-grid { grid-template-columns: 1fr; }
+    .layer-row {
+      grid-template-columns: 30px minmax(0,1fr) auto;
+      grid-template-areas: "id name flag" ". desc desc";
+      gap: 6px 10px;
+    }
+    .layer-id { grid-area: id; }
+    .layer-name { grid-area: name; }
+    .layer-desc { grid-area: desc; white-space: normal; }
+    .layer-flag { grid-area: flag; }
+    .guide th, .guide td { padding-right: 16px; }
+    .panel-actions { width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+    }
   }
 </style>
 </head>
@@ -147,78 +493,261 @@
 
 <div class="app">
 
-  <!-- ====== Header ====== -->
-  <header class="header">
-    <div class="icon">🧬</div>
-    <h1>浏览器指纹实验室</h1>
-    <p class="sub">Canvas 指纹 · WebGL GPU 指纹 · Audio 音频指纹 · 字体指纹 · 反指纹检测</p>
+  <!-- ====== Masthead ====== -->
+  <header class="masthead">
+    <div class="masthead-bar">
+      <span class="brand"><b>■</b> 指纹实验室 / FINGERPRINT LAB</span>
+      <span class="masthead-note">本地采集 · 数据不离开浏览器</span>
+    </div>
+    <div class="masthead-main">
+      <div>
+        <h1>浏览器指纹实验室</h1>
+        <p class="lede">一次采集，读取 Canvas、WebGL、Audio、字体、硬件与时区六个指纹维度，并补充环境一致性与反指纹检测。全部计算在本地完成。</p>
+      </div>
+      <div class="stamp">仅本地运行<br>数据不上传</div>
+    </div>
   </header>
 
   <!-- ====== 综合指纹 ID ====== -->
-  <div class="hero">
-    <div class="label">🔑 你的综合指纹 (Visitor ID)</div>
-    <div class="id pending pending-anim" id="visitorId">等待采集…</div>
-    <div class="meta">
-      <span>⏱ 耗时: <span class="v" id="metaTime">--</span></span>
-      <span>📊 维度数: <span class="v" id="metaDims">--</span></span>
-      <span>🔒 稳定性: <span class="v" id="metaStable">--</span></span>
+  <section class="specimen" aria-labelledby="specimenLabel">
+    <div class="specimen-top">
+      <span class="specimen-label" id="specimenLabel">综合指纹 / Visitor ID</span>
+      <span class="specimen-state" id="specimenState">尚未采集</span>
     </div>
-  </div>
+    <div class="specimen-id pending pending-anim" id="visitorId">等待采集…</div>
+    <div class="barcode" id="barcode" aria-hidden="true"></div>
+    <dl class="specimen-meta">
+      <div><dt>采集耗时</dt><dd id="metaTime">--</dd></div>
+      <div><dt>覆盖维度</dt><dd id="metaDims">--</dd></div>
+      <div><dt>指纹稳定性</dt><dd id="metaStable">--</dd></div>
+    </dl>
+  </section>
 
   <!-- ====== 标签页切换 ====== -->
-  <div class="tabs">
-    <button class="active" onclick="switchTab('collect')" id="tab-collect">📡 指纹采集结果</button>
-    <button onclick="switchTab('guide')" id="tab-guide">📖 Node.js 补环境指南</button>
+  <div class="tabs" role="tablist" aria-label="页面视图">
+    <button class="active" role="tab" aria-selected="true" aria-controls="tab-collect-content" onclick="switchTab('collect')" id="tab-collect">指纹采集结果</button>
+    <button role="tab" aria-selected="false" aria-controls="tab-coverage-content" onclick="switchTab('coverage')" id="tab-coverage">指纹覆盖地图</button>
+    <button role="tab" aria-selected="false" aria-controls="tab-tls-content" onclick="switchTab('tls')" id="tab-tls">TLS / JA3</button>
+    <button role="tab" aria-selected="false" aria-controls="tab-guide-content" onclick="switchTab('guide')" id="tab-guide">Node.js 补环境指南</button>
   </div>
 
-  <div id="status"></div>
+  <div id="status" role="status" aria-live="polite"></div>
 
   <!-- ====== 控制按钮 ====== -->
   <div class="controls" id="ctrl-btns">
-    <button class="primary" onclick="runTest()" id="btnRun">🔄 采集全部指纹</button>
-    <button onclick="runSingleTest('canvas')">🎨 Canvas</button>
-    <button onclick="runSingleTest('webgl')">🖥️ WebGL</button>
-    <button onclick="runSingleTest('audio')">🔊 Audio</button>
-    <button onclick="runSingleTest('anti')">🛡️ 反指纹检测</button>
-    <button onclick="copyReport()">📋 复制报告 JSON</button>
-    <button onclick="showEnvCode()" style="background:#1a3a2a;border-color:#238636;color:#3fb950;font-weight:700">📥 生成环境 JS 文件</button>
+    <button class="btn primary" onclick="runTest()" id="btnRun">采集全部指纹</button>
+    <div class="btn-group" aria-label="单项采集">
+      <button class="btn" onclick="runSingleTest('canvas')">Canvas</button>
+      <button class="btn" onclick="runSingleTest('webgl')">WebGL</button>
+      <button class="btn" onclick="runSingleTest('audio')">Audio</button>
+      <button class="btn" onclick="runSingleTest('anti')">反指纹检测</button>
+    </div>
+    <span class="spacer"></span>
+    <button class="btn" onclick="copyReport()">复制报告 JSON</button>
+    <button class="btn env" onclick="showEnvCode()">生成环境 JS 文件</button>
   </div>
 
   <!-- ====== 环境 JS 代码面板 ====== -->
-  <div id="env-code-panel" style="display:none; margin-bottom: 16px;">
-    <div class="guide" style="margin-bottom:0">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <h2 style="margin:0">📥 最终环境 JS 文件</h2>
-        <div style="display:flex;gap:8px">
-          <button onclick="copyEnvCode()" style="padding:8px 18px;background:#238636;border:1px solid #238636;border-radius:6px;color:#fff;font-weight:700;cursor:pointer;font-size:13px">📋 一键复制全部代码</button>
-          <button onclick="downloadEnvFile()" style="padding:8px 18px;background:#4f46e5;border:1px solid #4f46e5;border-radius:6px;color:#fff;font-weight:700;cursor:pointer;font-size:13px">💾 下载 fp_env_standalone.js</button>
-          <button onclick="$('env-code-panel').style.display='none'" style="padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);cursor:pointer;font-size:13px">✕ 关闭</button>
-        </div>
+  <section id="env-code-panel" class="env-panel" style="display:none" aria-label="最终环境 JS 文件">
+    <div class="panel-head">
+      <h2>最终环境 JS 文件</h2>
+      <div class="panel-actions">
+        <button class="btn" onclick="copyEnvCode()">复制全部代码</button>
+        <button class="btn primary" onclick="downloadEnvFile()">下载 fp_env_standalone.js</button>
+        <button class="btn ghost" onclick="document.getElementById('env-code-panel').style.display='none'">关闭</button>
       </div>
-      <p style="margin-bottom:10px;font-size:13px;color:var(--amber)">
-        ⚠️ 面板中显示的是<b>完整可独立运行</b>的 Node.js 环境 JS 文件。
-        已自动注入你当前浏览器的真实指纹数据（Canvas / WebGL / Audio / 字体 / 硬件 / 时区）。
-        复制或下载后，在项目根目录执行 <code>node fp_env_standalone.js</code> 即可。
-      </p>
-      <pre style="max-height:500px;overflow-y:auto" id="env-code-pre"><code id="env-code-content">请先点击"🔄 采集全部指纹"再生成环境文件</code></pre>
+    </div>
+    <p class="env-note">
+      面板中显示的是<b>完整可独立运行</b>的 Node.js 环境 JS 文件。
+      已自动注入你当前浏览器的真实指纹数据（Canvas / WebGL / Audio / 字体 / 硬件 / 时区）。
+      复制或下载后，在项目根目录执行 <code>node fp_env_standalone.js</code> 即可。
+    </p>
+    <pre class="env-code" id="env-code-pre"><code id="env-code-content">请先点击「采集全部指纹」再生成环境文件</code></pre>
+  </section>
+
+  <!-- ====== Tab1: 指纹采集结果 ====== -->
+  <div id="tab-collect-content">
+    <div class="results-shell">
+      <nav class="fp-nav" id="fp-nav" aria-label="指纹维度导航">
+        <div class="fp-nav-head"><span>指纹维度</span><span class="fp-nav-hint">点击切换</span></div>
+        <div id="fp-nav-items"></div>
+      </nav>
+      <section class="fp-detail" id="fp-detail" aria-live="polite">
+        <div class="detail-empty">
+          <p class="detail-empty-title">还没有采集结果</p>
+          <p>点击「采集全部指纹」，这里会按维度显示读数与原理。</p>
+        </div>
+      </section>
     </div>
   </div>
 
-  <!-- ====== Tab1: 指纹采集结果 ====== -->
-  <div id="tab-collect-content"><div class="grid" id="grid"></div></div>
+  <!-- ====== Tab2: 指纹覆盖地图 ====== -->
+  <div id="tab-coverage-content" style="display:none">
+    <div class="coverage">
+      <div class="coverage-head">
+        <h2>指纹覆盖地图</h2>
+        <p>本页聚焦浏览器可读的环境层。TLS 握手发生在更底层，已由「TLS / JA3」面板通过 Workers 边缘元数据或本地 ClientHello 工具记录；TTL 仍需抓包。行为、设备 SDK 与 App 侧信号属于另外两层，仓库用案例文档覆盖。</p>
+      </div>
 
-  <!-- ====== Tab2: Node.js 补环境指南 ====== -->
+      <div class="layer-map" aria-label="反爬分层与覆盖情况">
+        <div class="layer-row">
+          <span class="layer-id">L1</span><span class="layer-name">传输层</span>
+          <span class="layer-desc">TLS · JA3/JA4 · HTTP/2 · TCP/IP TTL</span>
+          <span class="layer-flag flag-js">边缘 / 本地</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-id">L2</span><span class="layer-name">挑战层</span>
+          <span class="layer-desc">瑞数 · Akamai · Cloudflare · AWS WAF · 加速乐</span>
+          <span class="layer-flag flag-case">案例 02/03/07/13/14</span>
+        </div>
+        <div class="layer-row is-current">
+          <span class="layer-id">L3</span><span class="layer-name">环境层</span>
+          <span class="layer-desc">Canvas · WebGL · Audio · 字体 · 硬件 · 时区</span>
+          <span class="layer-flag flag-page">本页覆盖</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-id">L4</span><span class="layer-name">签名层</span>
+          <span class="layer-desc">h5st · a_bogus · x-s · x-zse-96 · weapi</span>
+          <span class="layer-flag flag-case">案例 04/15/16/17/18</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-id">L5</span><span class="layer-name">行为层</span>
+          <span class="layer-desc">鼠标轨迹 · 键击 · 滑块 · 设备 SDK</span>
+          <span class="layer-flag flag-case">案例 06/09</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-id">L6</span><span class="layer-name">合规层</span>
+          <span class="layer-desc">抓取边界 · 判例 · 目标站条款</span>
+          <span class="layer-flag flag-case">案例 19</span>
+        </div>
+      </div>
+
+      <div class="coverage-grid">
+        <section class="cov-card">
+          <h3>本页实时采集</h3>
+          <ul>
+            <li>Canvas 像素与稳定性</li>
+            <li>WebGL GPU 参数与着色器像素</li>
+            <li>Audio 波形采样</li>
+            <li>字体安装列表</li>
+            <li>硬件：CPU / 内存 / 触点数 / 平台</li>
+            <li>时区与语言</li>
+            <li>UA / 屏幕 / DPR 环境补充</li>
+            <li>Farbling / WebGL 拦截 / UA 精简检测</li>
+          </ul>
+        </section>
+        <section class="cov-card">
+          <h3>浏览器可采 · 待扩展</h3>
+          <ul>
+            <li>WebRTC 候选地址（本地 IP 泄露）</li>
+            <li>媒体设备 / 语音列表</li>
+            <li>Network Information（RTT / downlink）</li>
+            <li>Permissions / Storage / 电池</li>
+            <li>传感器与 CSS 媒体查询</li>
+          </ul>
+          <p class="cov-links"><a href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/10_webrtc" target="_blank" rel="noopener">WebRTC 案例 10</a></p>
+        </section>
+        <section class="cov-card">
+          <h3>网络与传输 · 边缘 / 本地</h3>
+          <ul>
+            <li>TLS / JA3 / JA4 握手指纹</li>
+            <li>HTTP/2 帧与优先级指纹</li>
+            <li>TCP/IP TTL、窗口大小</li>
+            <li>DNS 与代理链路</li>
+          </ul>
+          <p class="cov-links">
+            <a href="#" onclick="switchTab('tls');return false;">TLS / JA3 面板</a>
+            <a href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/tools" target="_blank" rel="noopener">本地捕获工具</a>
+            <a href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/08_tls_fingerprint" target="_blank" rel="noopener">案例 08</a>
+          </p>
+        </section>
+        <section class="cov-card">
+          <h3>行为 / 设备 / 自动化</h3>
+          <ul>
+            <li>鼠标轨迹、键击节奏、滑块轨迹</li>
+            <li>数美 / 顶象 / 极验设备指纹 SDK</li>
+            <li>webdriver、CDP 暴露、stealth 对抗</li>
+            <li>App 侧 native 签名与设备信息</li>
+          </ul>
+          <p class="cov-links">
+            <a href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/06_device_sdk" target="_blank" rel="noopener">设备 SDK 06</a>
+            <a href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/09_behavioral" target="_blank" rel="noopener">行为 09</a>
+            <a href="https://github.com/jimmy-Smile-ltl/fingerprint/tree/main/cases/11_automation_detection" target="_blank" rel="noopener">自动化 11</a>
+          </p>
+        </section>
+      </div>
+
+      <div class="coverage-callout">
+        <strong>TTL / TLS 现在怎么记录？</strong>
+        <p>TLS 元数据可由 Workers 的边缘 API（TLS / JA3 面板）记录；完整 JA3 需要本地 ClientHello 捕获工具，或 Cloudflare Bot Management（JA3/JA4）。TTL 仍是 IP 包头字段，只能抓包或服务端观测。它们属于 L1 传输层，不是 Canvas/WebGL 的 L3 环境层信号。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Tab3: TLS / JA3 ====== -->
+  <div id="tab-tls-content" style="display:none">
+    <div class="tls-layout">
+      <section class="tls-panel">
+        <div class="tls-kicker">边缘观测 / Workers</div>
+        <h2>TLS 连接元数据</h2>
+        <p>浏览器 JavaScript 读不到 TLS 握手。部署到 Cloudflare Workers 后，边缘可以返回本次连接的 TLS 版本、加密套件、HTTP 协议与网络 RTT；JA3/JA4 需要 Bot Management。</p>
+        <div class="tls-actions"><button type="button" class="btn primary" onclick="probeTls()">读取当前连接</button></div>
+        <div id="tls-result" class="tls-result">尚未读取。点击按钮从 <code>/api/tls</code> 读取。</div>
+      </section>
+
+      <section class="tls-panel">
+        <div class="tls-kicker">本地捕获 / ClientHello</div>
+        <h3>完整 JA3 记录</h3>
+        <p>工具只读取 ClientHello，不完成握手；Chrome、requests、curl_cffi 都能被记录。</p>
+        <pre class="tls-code">python tools/tls_ja3_capture.py --port 8443</pre>
+        <p>另开一个终端触发客户端：</p>
+        <pre class="tls-code">curl -k https://127.0.0.1:8443
+python tools/tls_probe.py --impersonate chrome110</pre>
+        <p class="tls-hint">对比 requests 与 curl_cffi 的 JA3，可以验证 TLS 指纹伪装是否生效。本工具输出客户端 JA3；JA3S 与 JA4 规则不同。</p>
+        <p class="tls-hint">参考：<a href="https://www.tr0y.wang/2020/06/28/ja3/" target="_blank" rel="noopener">JA3 指纹介绍（tr0y.wang）</a> · <a href="https://blog.csdn.net/qq_38223858/article/details/145692676" target="_blank" rel="noopener">CSDN JA3 文章</a></p>
+      </section>
+
+      <section class="tls-panel tls-span">
+        <div class="tls-kicker">读法</div>
+        <h3>字段与稳定性</h3>
+        <dl class="detail-rows">
+          <div class="drow"><dt>JA3</dt><dd>TLS 版本、加密套件、扩展、椭圆曲线与点格式的 MD5</dd></div>
+          <div class="drow"><dt>TLS 版本</dt><dd>本次连接协商的 TLS 1.2 / 1.3</dd></div>
+          <div class="drow"><dt>加密套件</dt><dd>边缘观测到的实际协商套件</dd></div>
+          <div class="drow"><dt>HTTP 协议</dt><dd>HTTP/1.1、HTTP/2 或 HTTP/3</dd></div>
+          <div class="drow"><dt>Client RTT</dt><dd>边缘测算的客户端网络往返延迟</dd></div>
+          <div class="drow"><dt>JA4</dt><dd>更现代的顺序无关指纹，需要 Bot Management</dd></div>
+          <div class="drow"><dt>TCP/IP TTL</dt><dd>IP 包头字段，需抓包；本页与浏览器 JS 都无法读取</dd></div>
+        </dl>
+        <p class="tls-note">Chrome 会随机化 ClientHello 的扩展顺序，同一台 Chrome 的 JA3 也可能每次不同，这是正常现象。需要稳定比对时，优先看 JA4（Cloudflare Bot Management）或使用 curl_cffi 这类固定指纹的客户端。</p>
+      </section>
+    </div>
+  </div>
+
+  <!-- ====== Tab4: Node.js 补环境指南 ====== -->
   <div id="tab-guide-content" style="display:none">
+    <div class="guide-layout">
+      <aside class="guide-aside">
+        <p class="guide-aside-title">指南目录</p>
+        <nav aria-label="指南目录">
+          <a href="#guide-quick">快速开始</a>
+          <a href="#guide-map">维度对照表</a>
+          <a href="#guide-inject">配置注入方式</a>
+          <a href="#guide-method">五步补环境方法</a>
+          <a href="#guide-pitfalls">常见坑与解决方案</a>
+        </nav>
+        <button type="button" class="guide-back" onclick="switchTab('collect')">返回采集结果</button>
+      </aside>
 
-    <div class="guide">
-      <h2>📖 如何在 Node.js 中补充浏览器指纹环境</h2>
-      <p>
-        文件 <code>fp_env_patch.js</code> 为 <code>all_fp.js</code> 的每一个指纹维度提供了
-        完整的 Node.js 运行环境。每个浏览器 API 都有对应的模拟实现，
-        <b>且保持正确的原型链</b>，确保 <code>instanceof</code> 检测和 <code>toString</code> 检测都能通过。
-      </p>
+      <div class="guide">
+        <h2>如何在 Node.js 中补充浏览器指纹环境</h2>
+        <p>
+          文件 <code>fp_env_patch.js</code> 为 <code>all_fp.js</code> 的每一个指纹维度提供了
+          完整的 Node.js 运行环境。每个浏览器 API 都有对应的模拟实现，
+          <b>且保持正确的原型链</b>，确保 <code>instanceof</code> 检测和 <code>toString</code> 检测都能通过。
+        </p>
 
-      <h3>🔄 快速开始</h3>
+        <h3 id="guide-quick">快速开始</h3>
       <pre><code># 安装依赖
 npm install blueimp-md5
 
@@ -233,42 +762,42 @@ node test_fp_node.js --preset ios-safari
 # 环境变量注入自定义值
 FP_GPU_VENDOR="NVIDIA" FP_GPU_RENDERER="RTX 4090" FP_PLATFORM="Win32" node test_fp_node.js</code></pre>
 
-      <h3>🗺️ 指纹维度 → 浏览器 API → Node.js 补丁 对照表</h3>
+      <h3 id="guide-map">指纹维度 → 浏览器 API → Node.js 补丁 对照表</h3>
       <table>
         <thead><tr><th>指纹维度</th><th>浏览器 API</th><th>fp_env_patch.js 实现</th><th>原型链</th></tr></thead>
         <tbody>
           <tr>
-            <td><b>🎨 Canvas</b></td>
+            <td><b>Canvas</b></td>
             <td><code>document.createElement('canvas')</code><br><code>canvas.getContext('2d')</code><br><code>ctx.fillText / measureText / toDataURL</code></td>
             <td><code>HTMLCanvasElement.prototype.getContext</code><br><code>CanvasRenderingContext2D.prototype</code><br>返回稳定 Base64 图像数据</td>
             <td><code>canvas.__proto__ → HTMLCanvasElement.prototype</code><br><code>ctx.__proto__ → CanvasRenderingContext2D.prototype</code></td>
           </tr>
           <tr>
-            <td><b>🖥️ WebGL</b></td>
+            <td><b>WebGL</b></td>
             <td><code>canvas.getContext('webgl')</code><br><code>gl.getParameter(VENDOR)</code><br><code>gl.getExtension('WEBGL_debug_renderer_info')</code><br><code>gl.createShader / compileShader / drawArrays</code></td>
             <td><code>WebGLRenderingContext.prototype</code><br>30+ GL 常量 + 完整着色器管线<br>GPU 厂商/型号通过 FP_CONFIG 注入</td>
             <td><code>gl.__proto__ → WebGLRenderingContext.prototype</code></td>
           </tr>
           <tr>
-            <td><b>🔊 Audio</b></td>
+            <td><b>Audio</b></td>
             <td><code>new OfflineAudioContext(1,44100,44100)</code><br><code>ctx.createOscillator()</code><br><code>ctx.createDynamicsCompressor()</code><br><code>ctx.startRendering() → oncomplete</code></td>
             <td><code>OfflineAudioContext.prototype</code><br>振荡器 → 压缩器 音频管线<br>返回基于 audioSeed 的稳定波形</td>
             <td><code>ctx instanceof OfflineAudioContext</code><br><code>osc.__proto__ → OscillatorNode.prototype</code></td>
           </tr>
           <tr>
-            <td><b>🔤 字体</b></td>
+            <td><b>字体</b></td>
             <td><code>ctx.font = '72px "Arial", monospace'</code><br><code>ctx.measureText('mmmmmmmmlli').width</code></td>
             <td><code>measureText</code> 按主字体名返回不同宽度<br>模拟 16 种常见系统字体差异</td>
             <td>复用 CanvasRenderingContext2D 原型</td>
           </tr>
           <tr>
-            <td><b>💻 硬件</b></td>
+            <td><b>硬件</b></td>
             <td><code>navigator.deviceMemory</code><br><code>navigator.hardwareConcurrency</code><br><code>navigator.maxTouchPoints</code><br><code>navigator.platform</code></td>
             <td><code>Navigator.prototype</code> getter 属性<br>通过 FP_CONFIG 注入</td>
             <td><code>navigator.__proto__ → Navigator.prototype</code><br><code>navigator instanceof Navigator</code></td>
           </tr>
           <tr>
-            <td><b>🌍 时区</b></td>
+            <td><b>时区</b></td>
             <td><code>Intl.DateTimeFormat().resolvedOptions().timeZone</code><br><code>new Date().getTimezoneOffset()</code><br><code>navigator.languages</code></td>
             <td>重写 <code>Date.prototype.getTimezoneOffset</code><br>通过 FP_CONFIG.timezone 注入</td>
             <td>原型链原样保留</td>
@@ -276,7 +805,7 @@ FP_GPU_VENDOR="NVIDIA" FP_GPU_RENDERER="RTX 4090" FP_PLATFORM="Win32" node test_
         </tbody>
       </table>
 
-      <h3>⚙️ 配置注入方式（3 种）</h3>
+      <h3 id="guide-inject">配置注入方式（3 种）</h3>
       <table>
         <thead><tr><th>方式</th><th>示例</th><th>适用场景</th></tr></thead>
         <tbody>
@@ -286,7 +815,7 @@ FP_GPU_VENDOR="NVIDIA" FP_GPU_RENDERER="RTX 4090" FP_PLATFORM="Win32" node test_
         </tbody>
       </table>
 
-      <h3>📝 代码中自定义指纹</h3>
+      <h3>代码中自定义指纹</h3>
       <pre><code>// 加载补环境（必须在 import all_fp.js 之前）
 const { setFingerprintConfig, applyPreset } = require('./fp_env_patch.js');
 
@@ -333,7 +862,7 @@ const fp = new mod.BrowserFingerprinter();
 const { visitorId } = await fp.getFingerprint();
 console.log('Visitor ID:', visitorId);</code></pre>
 
-      <h3>🔗 原型链架构（一一对应真实浏览器）</h3>
+      <h3>原型链架构（一一对应真实浏览器）</h3>
       <pre><code>// Window 层
 window.__proto__ = Window.prototype          → instanceof Window ✅
 
@@ -360,7 +889,7 @@ audioCtx instanceof OfflineAudioContext       → true ✅
 osc = audioCtx.createOscillator()
 osc.__proto__ = OscillatorNode.prototype      → 完整音频节点 API ✅</code></pre>
 
-      <h3>🎯 4 个预设设备</h3>
+      <h3>4 个预设设备</h3>
       <table>
         <thead><tr><th>预设名</th><th>平台</th><th>GPU</th><th>CPU</th><th>RAM</th></tr></thead>
         <tbody>
@@ -371,13 +900,13 @@ osc.__proto__ = OscillatorNode.prototype      → 完整音频节点 API ✅</co
         </tbody>
       </table>
 
-      <h2 style="margin-top: 36px;">🏗️ 如何从零构建最终的环境 JS 文件</h2>
+      <h2 id="guide-method" style="margin-top: 36px;">如何从零构建最终的环境 JS 文件</h2>
       <p>
         下面以 <code>fp_env_patch.js</code> 的构建过程为例，展示一个<b>通用的、可复现的</b> 5 步补环境方法论。
         这套方法不仅适用于指纹采集，也适用于任何需要在 Node.js 中运行浏览器 JS 的场景。
       </p>
 
-      <h3>📐 阶段 0：枚举目标脚本使用的所有浏览器 API</h3>
+      <h3>阶段 0：枚举目标脚本使用的所有浏览器 API</h3>
       <p>在写任何补丁之前，必须先搞清楚 <b>目标脚本到底调用了哪些浏览器 API</b>。有 3 种分析方法：</p>
       <table>
         <thead><tr><th>方法</th><th>命令/工具</th><th>输出</th></tr></thead>
@@ -399,7 +928,7 @@ osc.__proto__ = OscillatorNode.prototype      → 完整音频节点 API ✅</co
 // Screen:   screen.width, screen.height, screen.colorDepth
 // Intl:     Intl.DateTimeFormat().resolvedOptions().timeZone</code></pre>
 
-      <h3>📐 阶段 1：构建全局骨架（window / document / navigator）</h3>
+      <h3>阶段 1：构建全局骨架（window / document / navigator）</h3>
       <p>这是所有补环境的基础，必须<b>最先处理</b>。核心原则：</p>
       <ul>
         <li><b>window = global</b>（Node.js 全局对象即 window）</li>
@@ -425,7 +954,7 @@ window.JSON = JSON;
 window.parseInt = parseInt;
 // ... 其他原生对象</code></pre>
 
-      <h3>📐 阶段 2：构建构造函数 + 原型链（核心）</h3>
+      <h3>阶段 2：构建构造函数 + 原型链（核心）</h3>
       <p>这是补环境最关键的步骤。真实浏览器中 <b>每个 DOM 对象都有构造函数和原型链</b>，很多脚本会检测 <code>instanceof</code> 和 <code>Object.prototype.toString.call()</code>。</p>
       <table>
         <thead><tr><th>步骤</th><th>代码</th><th>验证</th></tr></thead>
@@ -463,7 +992,7 @@ navigator.__proto__ = Navigator.prototype;
 window.navigator = navigator;
 window.clientInformation = navigator;  // 别名</code></pre>
 
-      <h3>📐 阶段 3：逐维度补实现（合成模式 vs 真实数据注入模式）</h3>
+      <h3>阶段 3：逐维度补实现（合成模式 vs 真实数据注入模式）</h3>
       <p>每个指纹维度支持<b>两种模式</b>：</p>
       <ul>
         <li><b>合成模式（默认）</b>：用 seed 生成固定但独特的指纹值，适合测试、批量生成不同设备指纹</li>
@@ -623,7 +1152,7 @@ document.createElement = function(tagName) {
   // ... 其他标签
 };</code></pre>
 
-      <h3>📐 阶段 4：toString 伪装（safeFunction）</h3>
+      <h3>阶段 4：toString 伪装（safeFunction）</h3>
       <p>很多风控脚本会检测函数 <code>toString()</code> 是否返回 <code>"function xxx() { [native code] }"</code>。如果返回的是真实函数体，说明环境被篡改过。</p>
       <pre><code>// === toString 伪装机制（参考 run_js_proto.js / _ab_env_ok.js）===
 const _native_toString_symbol = Symbol('function_toString');
@@ -652,7 +1181,7 @@ updateFunToString(HTMLCanvasElement);
 updateFunToString(Document);
 // Navigator.toString() → "function Navigator() { [native code] }" ✅</code></pre>
 
-      <h3>📐 阶段 5：验证 — 对比浏览器 vs Node.js 输出</h3>
+      <h3>阶段 5：验证 — 对比浏览器 vs Node.js 输出</h3>
       <p>补完环境后，必须<b>逐维度对比</b>浏览器和 Node.js 的输出，确保一致性：</p>
       <table>
         <thead><tr><th>验证项</th><th>浏览器预期</th><th>Node.js 验证命令</th></tr></thead>
@@ -665,7 +1194,7 @@ updateFunToString(Document);
         </tbody>
       </table>
 
-      <h3>🗺️ 完整流程图：从零到最终 env JS 文件</h3>
+      <h3>完整流程图：从零到最终 env JS 文件</h3>
       <pre><code>┌─────────────────────────────────────────────────────────┐
 │  Step 0: 枚举 API                                        │
 │  静态搜索 all_fp.js → 找到所有 document./navigator./     │
@@ -698,7 +1227,7 @@ updateFunToString(Document);
 │  ✅ 最终产物: fp_env_patch.js (1500+ 行完整环境)           │
 └─────────────────────────────────────────────────────────┘</code></pre>
 
-      <h3>⚡ 常见坑 & 解决方案</h3>
+      <h3 id="guide-pitfalls">常见坑与解决方案</h3>
       <table>
         <thead><tr><th>坑</th><th>现象</th><th>解决方案</th></tr></thead>
         <tbody>
@@ -712,21 +1241,25 @@ updateFunToString(Document);
           <tr><td>strict mode delete 报错</td><td><code>Delete of an unqualified identifier</code></td><td>使用 <code>try { delete GLOBAL; } catch(e) {}</code>，且顶层不加 <code>'use strict'</code></td></tr>
         </tbody>
       </table>
-    </div>
-  </div>
+      </div><!-- /guide -->
+    </div><!-- /guide-layout -->
+  </div><!-- /tab-guide-content -->
 
   <!-- ====== Footer ====== -->
   <div class="footer">
     基于 <a href="https://blog.csdn.net/u012220174/article/details/157870592" target="_blank">CSDN: 深入浏览器指纹</a>
     · FingerprintJS 技术
     · 原型链框架参考 <a href="#">瑞数补环境 run_js_proto.js</a>
+    · <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">回到顶部</a>
   </div>
 
 </div><!-- /app -->
 
 <!-- ============================================================ -->
+<script>window.__FP_NO_AUTORUN = true;</script>
+<script src="./vendor/md5.min.js"></script>
 <script type="importmap">
-{ "imports": { "blueimp-md5": "https://esm.sh/blueimp-md5@2.19.0" } }
+{ "imports": { "blueimp-md5": "./vendor/blueimp-md5.js" } }
 </script>
 
 <script type="module">
@@ -754,169 +1287,384 @@ const setStatus = (t, type) => { const e=$('status'); e.textContent=t; e.classNa
 
 // Tab switch
 window.switchTab = function(tab) {
-  const isCollect = tab === 'collect';
-  $('tab-collect-content').style.display = isCollect ? '' : 'none';
-  $('tab-guide-content').style.display = isCollect ? 'none' : '';
-  $('ctrl-btns').style.display = isCollect ? '' : 'none';
-  $('tab-collect').classList.toggle('active', isCollect);
-  $('tab-guide').classList.toggle('active', !isCollect);
+  ['collect', 'coverage', 'tls', 'guide'].forEach(function(name) {
+    const active = name === tab;
+    const btn = $('tab-' + name);
+    const pane = $('tab-' + name + '-content');
+    if (btn) {
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    }
+    if (pane) pane.style.display = active ? '' : 'none';
+  });
+  $('ctrl-btns').style.display = tab === 'collect' ? '' : 'none';
   $('status').style.display = 'none';
-  if (!isCollect) $('grid').innerHTML = '';
+  if (tab !== 'collect') $('env-code-panel').style.display = 'none';
+  if (tab === 'tls' && typeof window.probeTls === 'function') window.probeTls();
+  // 切换标签时保留已采集结果，回来无需重跑
 };
 
-function card(cat, tagCls, tagTxt, icon, title, rows) {
-  const r = rows.map(r => {
-    let cls = r.w ? 'warn' : r.g ? 'ok' : r.b ? 'bad' : r.h ? 'hl' : '';
-    return `<div class="row"><span class="k">${r.k}</span><span class="v ${cls}">${r.v}</span></div>`;
-  }).join('');
-  return `<div class="card open fp-${cat}">
-    <div class="card-header" onclick="this.closest('.card').classList.toggle('open')">
-      <h3><span class="dot ${cat}"></span>${icon} ${title}</h3>
-      <span><span class="tag ${tagCls}">${tagTxt}</span><span class="arrow">▾</span></span>
-    </div>
-    <div class="card-body"><div class="card-body-inner">${r}</div></div>
-  </div>`;
+const escapeHtml = function(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+  });
+};
+
+// 读取 Cloudflare Workers 边缘看到的 TLS 元数据；静态托管时返回 404，会显示本地捕获提示。
+window.probeTls = async function() {
+  const el = $('tls-result');
+  if (!el) return;
+  el.textContent = '读取中…';
+  try {
+    const res = await fetch('/api/tls', { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const fmt = function(v) { return v == null || v === '' ? '不可用' : v; };
+    const rows = [
+      ['TLS 版本', fmt(data.tlsVersion)],
+      ['加密套件', fmt(data.tlsCipher)],
+      ['HTTP 协议', fmt(data.httpProtocol)],
+      ['Client RTT', data.clientTcpRtt == null ? '不可用' : data.clientTcpRtt + ' ms'],
+      ['ASN', data.asn == null ? '不可用' : data.asn + (data.asOrganization ? ' · ' + data.asOrganization : '')],
+      ['边缘节点', fmt(data.colo)],
+      ['国家/地区', fmt(data.country)],
+      ['JA3', fmt(data.ja3Hash)],
+      ['JA4', fmt(data.ja4)]
+    ];
+    el.innerHTML = `<dl class="detail-rows">${rows.map(function(row) {
+      return `<div class="drow"><dt>${escapeHtml(row[0])}</dt><dd>${escapeHtml(row[1])}</dd></div>`;
+    }).join('')}</dl><p class="tls-hint">${escapeHtml(data.note || '')}</p>`;
+  } catch (e) {
+    el.innerHTML = '<p class="tls-fallback">边缘 API 不可用（静态托管 / 本地 http.server 都会这样）。请使用右侧的本地 JA3 捕获工具；部署到 Cloudflare Workers 后，此按钮会返回真实 TLS 元数据。</p>';
+  }
+};
+
+function rowHtml(row) {
+  const cls = row.w ? 'warn' : row.g ? 'ok' : row.b ? 'bad' : row.h ? 'hl' : '';
+  return `<div class="drow"><dt>${escapeHtml(row.k)}</dt><dd class="${cls}">${escapeHtml(row.v)}</dd></div>`;
 }
+
+function detailHtml(dim, index, total) {
+  const rows = dim.rows.map(rowHtml).join('');
+  let body = `<dl class="detail-rows ${dim.two ? 'two-col' : ''}">${rows}</dl>`;
+  if (dim.side) {
+    body = `<div class="detail-columns"><dl class="detail-rows">${rows}</dl>${dim.side}</div>`;
+  }
+  return `<div class="detail-bar cat-${dim.cat}"></div>
+    <div class="detail-inner">
+      <div class="detail-top">
+        <span class="tag ${dim.cat}">${escapeHtml(dim.tag)}</span>
+        <span class="detail-count">${index + 1} / ${total}</span>
+      </div>
+      <h3>${escapeHtml(dim.label)}</h3>
+      <p class="principle"><span class="principle-label">原理</span>${escapeHtml(dim.principle)}</p>
+      ${dim.note ? `<p class="detail-note">${escapeHtml(dim.note)}</p>` : ''}
+      ${body}
+      ${dim.extra || ''}
+    </div>`;
+}
+
+window.showDim = function(id) {
+  const dims = window._dims || [];
+  const index = dims.findIndex(function(dim) { return dim.id === id; });
+  if (index < 0) return;
+  document.querySelectorAll('.fp-nav-item').forEach(function(btn) {
+    const active = btn.dataset.id === id;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-current', active ? 'true' : 'false');
+  });
+  $('fp-detail').innerHTML = detailHtml(dims[index], index, dims.length);
+  window._activeDim = id;
+};
+
+function renderDims(dims, activeId) {
+  if (!dims.length) return;
+  window._dims = dims;
+  const nav = $('fp-nav-items');
+  nav.innerHTML = dims.map(function(dim) {
+    return `<button type="button" class="fp-nav-item" data-id="${escapeHtml(dim.id)}" onclick="showDim('${escapeHtml(dim.id)}')">
+      <span class="fp-nav-swatch ${dim.cat}" aria-hidden="true"></span>
+      <span class="fp-nav-label">${escapeHtml(dim.label)}</span>
+      <span class="fp-nav-summary">${escapeHtml(dim.summary || '')}</span>
+    </button>`;
+  }).join('');
+  const target = activeId && dims.some(function(dim) { return dim.id === activeId; })
+    ? activeId : dims[0].id;
+  window.showDim(target);
+}
+
+function shortHash(hash) {
+  return hash ? hash.slice(0, 8) + '…' : '—';
+}
+
+function makeCanvasDim(c) {
+  const raw = (c.canvas && c.canvas.rawData) || '';
+  return {
+    id: 'canvas', label: 'Canvas', tag: 'Canvas', cat: 'canvas',
+    summary: shortHash(c.canvas && c.canvas.hash),
+    principle: '不同系统的字体渲染、抗锯齿与颜色空间不同，同一条绘制指令的 toDataURL 结果会在字节级产生差异。',
+    rows: [
+      {k:'MD5 哈希', v:(c.canvas && c.canvas.hash) || '—', h:1},
+      {k:'数据稳定性', v:(c.canvas && c.canvas.isStable) ? '稳定（无 Farbling 噪声）' : '不稳定（检测到 Farbling）', w:!(c.canvas && c.canvas.isStable), g:!!(c.canvas && c.canvas.isStable)},
+      {k:'画布尺寸', v:'280 × 60'},
+      {k:'原始数据', v:raw ? raw.length + ' 字符' : '—'}
+    ],
+    extra: raw ? `<details class="data-block"><summary class="data-block-head">查看 toDataURL 原始数据（前 1600 字符）</summary><pre>${escapeHtml(raw.slice(0, 1600))}${raw.length > 1600 ? '…' : ''}</pre></details>` : ''
+  };
+}
+
+function makeWebglDim(c) {
+  const basic = c.webglBasic || '';
+  const params = {};
+  basic.split('|').forEach(function(item) {
+    const idx = item.indexOf(':');
+    if (idx > 0) params[item.slice(0, idx)] = item.slice(idx + 1);
+  });
+  const extensions = params.extensions ? params.extensions.split(',') : [];
+  const advanced = c.webglAdvanced == null ? null : String(c.webglAdvanced);
+  const allZero = advanced && advanced.replace(/\s/g, '') === '0,0,0,0';
+  let note = '';
+  if (!basic) {
+    note = '当前环境未返回 WebGL 上下文：浏览器可能禁用了 WebGL、没有可用 GPU，或被反指纹扩展拦截。';
+  } else if (advanced == null) {
+    note = 'WebGL 上下文可用，但没有返回着色器像素；可能被驱动或扩展限制。';
+  } else if (allZero) {
+    note = '0,0,0,0 是 readPixels 读到的有效 RGBA 值，不是空数据；不同 GPU 的浮点精度会体现为不同的 4 字节结果。';
+  }
+  return {
+    id: 'webgl', label: 'WebGL', tag: 'WebGL', cat: 'webgl',
+    summary: params.unmaskedVendor || params.vendor || (basic ? 'WebGL 可用' : '不可用'),
+    principle: 'GPU 型号、驱动版本与着色器浮点精度不同；getParameter 暴露硬件上限，readPixels 读回的像素也略有差异。',
+    note: note,
+    rows: [
+      {k:'Vendor', v:params.vendor || '—'},
+      {k:'Renderer', v:params.renderer || '—'},
+      {k:'Unmasked Vendor', v:params.unmaskedVendor || '—', h:!!params.unmaskedVendor},
+      {k:'Unmasked Renderer', v:params.unmaskedRenderer || '—', h:!!params.unmaskedRenderer},
+      {k:'Version', v:params.version || '—'},
+      {k:'GLSL 版本', v:params.shadingLangVersion || '—'},
+      {k:'最大纹理', v:params.maxTextureSize || '—'},
+      {k:'最大视口', v:params.maxViewportDims || '—'},
+      {k:'最大顶点属性', v:params.maxVertexAttribs || '—'},
+      {k:'扩展数量', v:extensions.length ? extensions.length + ' 个' : '—'},
+      {k:'着色器像素', v:advanced || 'N/A', h:!!advanced}
+    ],
+    side: extensions.length
+      ? `<div class="ext-box"><div class="ext-head">扩展列表 <span>${extensions.length}</span></div><div class="ext-list">${extensions.map(function(ext) { return `<span>${escapeHtml(ext)}</span>`; }).join('')}</div></div>`
+      : `<div class="ext-box"><div class="ext-head">扩展列表</div><p class="ext-empty">未读取到扩展列表</p></div>`
+  };
+}
+
+function makeAudioDim(c) {
+  const audio = c.audio || {};
+  const raw = audio.rawData || '';
+  return {
+    id: 'audio', label: 'Audio', tag: 'Audio', cat: 'audio',
+    summary: shortHash(audio.hash),
+    principle: '音频栈（WASAPI / CoreAudio / ALSA）与浮点实现不同，振荡器经压缩器渲染后的波形采样值会在小数位上产生差异。',
+    rows: [
+      {k:'MD5 哈希', v:audio.hash || '—', h:1},
+      {k:'采集范围', v:'4500 – 5000 采样点'},
+      {k:'采样点数', v:raw ? raw.split(',').length + ' 个（报告内）' : '—'},
+      {k:'采集管线', v:'triangle 10000Hz → DynamicsCompressor → OfflineAudioContext'}
+    ],
+    extra: raw ? `<details class="data-block"><summary class="data-block-head">查看 getChannelData 采样点（前 800 字符）</summary><pre>${escapeHtml(raw.slice(0, 800))}${raw.length > 800 ? '…' : ''}</pre></details>` : ''
+  };
+}
+
+function makeFontDim(c) {
+  const list = c.fonts ? c.fonts.split(',').filter(Boolean) : [];
+  return {
+    id: 'fonts', label: '字体', tag: 'System', cat: 'system',
+    summary: list.length + ' 个字体',
+    principle: '操作系统预装字体集合不同；用同一字符串在不同字体下测量宽度，可以推断字体是否已安装。',
+    rows: [
+      {k:'已安装字体', v:list.length + ' 个'},
+      {k:'检测方法', v:'ctx.font = "72px 目标字体" → measureText("mmmmmmmmlli").width'},
+      {k:'基线字体', v:'monospace（等宽字体作为基准宽度）'}
+    ],
+    extra: list.length ? `<div class="font-chips">${list.map(function(font) { return `<span class="font-chip">${escapeHtml(font)}</span>`; }).join('')}</div>` : ''
+  };
+}
+
+function makeHardwareDim(c) {
+  const hw = c.hardware || {};
+  return {
+    id: 'hardware', label: '硬件', tag: 'System', cat: 'system',
+    summary: (hw.platform || '—') + ' · ' + (hw.hardwareConcurrency || '—') + ' 核',
+    principle: 'CPU 核心数、内存、触点数与平台由浏览器暴露；单值熵低，组合后用于辅助区分设备。',
+    rows: [
+      {k:'设备内存 (RAM)', v:hw.deviceMemory ? hw.deviceMemory + ' GB' : '—'},
+      {k:'CPU 逻辑核心数', v:hw.hardwareConcurrency || '—'},
+      {k:'触摸点数', v:hw.maxTouchPoints > 0 ? hw.maxTouchPoints + '（触摸设备）' : '0（非触摸设备）'},
+      {k:'操作系统平台', v:hw.platform || '—'}
+    ]
+  };
+}
+
+function makeEnvironmentDim() {
+  const width = (typeof screen !== 'undefined' && screen.width) || '—';
+  const height = (typeof screen !== 'undefined' && screen.height) || '—';
+  const conn = (typeof navigator !== 'undefined')
+    ? (navigator.connection || navigator.mozConnection || navigator.webkitConnection)
+    : null;
+  return {
+    id: 'environment', label: '环境补充', tag: 'Env', cat: 'system',
+    summary: width + '×' + height,
+    principle: 'UA、屏幕、DPR、语言与浏览器暴露的网络信息是最基础的环境信号，常与 Canvas/WebGL 指纹交叉校验。',
+    note: '展示项：这些字段当前不参与 Visitor ID 计算，仅用于环境一致性检查。',
+    rows: [
+      {k:'User Agent', v:(typeof navigator !== 'undefined' && navigator.userAgent) || '—'},
+      {k:'平台', v:(typeof navigator !== 'undefined' && navigator.platform) || '—'},
+      {k:'屏幕', v:width + ' × ' + height},
+      {k:'可用区域', v:(typeof screen !== 'undefined' ? screen.availWidth + ' × ' + screen.availHeight : '—')},
+      {k:'DPR', v:(typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : '—')},
+      {k:'色彩深度', v:(typeof screen !== 'undefined' ? screen.colorDepth : '—')},
+      {k:'语言', v:(typeof navigator !== 'undefined' ? navigator.language : '—')},
+      {k:'偏好语言', v:(typeof navigator !== 'undefined' && Array.isArray(navigator.languages) ? navigator.languages.join(', ') : '—')},
+      {k:'网络类型', v:conn ? (conn.effectiveType || '—') : '不可用（非 Chrome）'},
+      {k:'RTT', v:conn && conn.rtt != null ? conn.rtt + ' ms' : '—'},
+      {k:'下行带宽', v:conn && conn.downlink != null ? conn.downlink + ' Mbps' : '—'},
+      {k:'联网状态', v:(typeof navigator !== 'undefined' && navigator.onLine) ? '在线' : '离线'}
+    ]
+  };
+}
+
+function makeTimezoneDim(c) {
+  const tz = c.timezone || {};
+  return {
+    id: 'timezone', label: '时区', tag: 'System', cat: 'system',
+    summary: tz.timezone || '—',
+    principle: 'IANA 时区、UTC 偏移与语言列表反映系统配置，常与 IP 地理位置和语言偏好交叉校验。',
+    rows: [
+      {k:'IANA 时区', v:tz.timezone || '—', h:1},
+      {k:'UTC 偏移', v:(tz.timezoneOffset != null ? tz.timezoneOffset + ' 分钟' : '—')},
+      {k:'偏好语言', v:Array.isArray(tz.languages) ? tz.languages.join(', ') : (tz.languages || '—')},
+      {k:'界面语言', v:tz.language || '—'}
+    ]
+  };
+}
+
+function makeDetectDim(c) {
+  const fb = c.farblingDetected;
+  const wi = c.webglInterception || {};
+  const ua = c.uaReduction || {};
+  return {
+    id: 'detect', label: '反指纹检测', tag: 'Detect', cat: 'detect',
+    summary: (fb ? 'Farbling' : '无噪声') + ' · ' + (wi.debugInfoBlocked ? '拦截' : '可读'),
+    principle: '检测浏览器是否启用 Farbling 噪声、WebGL 调试信息拦截与 UA 精简；这些特征本身也会进入风控打分。',
+    two: true,
+    rows: [
+      {k:'Canvas Farbling', v:fb ? '已启用（Brave / Firefox RFP）' : '未检测到', w:!!fb, g:!fb},
+      {k:'WebGL 是否可用', v:wi.webglAvailable ? '是' : '否', g:!!wi.webglAvailable, b:!wi.webglAvailable},
+      {k:'Debug 信息拦截', v:wi.debugInfoBlocked ? '是（GPU 信息被隐藏）' : '否（可读真实 GPU）', w:!!wi.debugInfoBlocked, g:!wi.debugInfoBlocked},
+      {k:'真实 GPU 厂商', v:wi.unmaskedVendor || '已拦截', w:!wi.unmaskedVendor, h:!!wi.unmaskedVendor},
+      {k:'真实 GPU 型号', v:wi.unmaskedRenderer || '已拦截', w:!wi.unmaskedRenderer, h:!!wi.unmaskedRenderer},
+      {k:'UA 精简', v:ua.isReduced ? '已启用（版本号被固定）' : '完整 UA', w:!!ua.isReduced, g:!ua.isReduced},
+      {k:'Chrome 主版本', v:ua.chromeVersion || '—'}
+    ]
+  };
+}
+
+// 把 visitorId 的每一位渲染成一根竖条，形成可辨认的样本条带
+window.renderBarcode = function(hex) {
+  const el = $('barcode');
+  if (!el) return;
+  const text = (hex || '').replace(/[^0-9a-f]/gi, '');
+  const source = text || '00000000000000000000000000000000';
+  el.classList.toggle('is-placeholder', !text);
+  el.innerHTML = '';
+  for (let i = 0; i < source.length; i++) {
+    const bar = document.createElement('i');
+    const n = parseInt(source[i], 16);
+    bar.style.width = (2 + (n % 6) * 1.7) + 'px';
+    bar.style.animationDelay = (i * 9) + 'ms';
+    el.appendChild(bar);
+  }
+};
 
 window.runTest = async function() {
   const m = window._m, t0 = performance.now();
-  setStatus('⏳ 正在并行采集 Canvas / WebGL / Audio / 字体 / 硬件 / 时区…', 'running');
+  setStatus('正在并行采集 Canvas / WebGL / Audio / 字体 / 硬件 / 时区…', 'running');
   $('btnRun').disabled = true;
-  $('visitorId').textContent = '采集ing…'; $('visitorId').classList.add('pending-anim');
+  $('specimenState').textContent = '采集中';
+  $('visitorId').textContent = '采集中…';
+  $('visitorId').classList.add('pending-anim');
 
   try {
     const fp = new m.BrowserFingerprinter();
     const { visitorId, components: c } = await fp.getFingerprint();
     const ms = (performance.now()-t0).toFixed(0);
 
-    $('visitorId').textContent = visitorId; $('visitorId').classList.remove('pending-anim','pending');
-    $('metaTime').textContent = ms + 'ms';
-    $('metaDims').textContent = Object.keys(c).length + ' 个维度';
-    $('metaStable').textContent = c.farblingDetected ? '⚠️ 检测到噪声' : '✅ 指纹稳定';
+    $('visitorId').textContent = visitorId;
+    $('visitorId').classList.remove('pending-anim','pending');
+    $('specimenState').textContent = '已采集';
+    $('metaTime').textContent = ms + ' ms';
+    $('metaStable').textContent = c.farblingDetected ? '检测到噪声' : '稳定';
+    window.renderBarcode(visitorId);
 
-    const cards = [];
-
-    // Canvas
-    cards.push(card('canvas','canvas','CANVAS','🎨','Canvas 像素指纹', [
-      {k:'MD5 哈希', v:c.canvas.hash, h:1},
-      {k:'数据稳定性', v:c.canvas.isStable?'✅ 稳定（无 Farbling 噪声）':'⚠️ 不稳定（检测到 Farbling）', w:!c.canvas.isStable, g:c.canvas.isStable},
-      {k:'原始数据（前80字符）', v:trunc(c.canvas.rawData, 80)}
-    ]));
-
-    // WebGL
-    if (c.webglBasic) {
-      const rows = [{k:'完整指纹串', v:trunc(c.webglBasic, 120)}];
-      c.webglBasic.split('|').forEach(item => { const [k,...v]=item.split(':'); rows.push({k:'  ▸ '+k, v:v.join(':')||'—'}); });
-      cards.push(card('webgl','webgl','WEBGL','🖥️','WebGL GPU 指纹', rows));
-    } else {
-      cards.push(card('webgl','webgl','WEBGL','🖥️','WebGL GPU 指纹', [{k:'状态',v:'❌ 不可用',b:1}]));
-    }
-
-    // WebGL 着色器
-    cards.push(card('webgl','webgl','WEBGL','🔬','WebGL 着色器渲染指纹', [
-      {k:'渲染像素值', v:c.webglAdvanced||'N/A', h:1}
-    ]));
-
-    // Audio — 重点展示
-    cards.push(card('audio','audio','AUDIO','🔊','Audio 音频指纹（振荡器 → 压缩器管线）', [
-      {k:'MD5 哈希', v:c.audio.hash||'—', h:1},
-      {k:'音频采样点（前100字符）', v:trunc(c.audio.rawData,100)},
-      {k:'说明', v:'triangle 10000Hz → DynamicsCompressor → 4500~5000 采样点'}
-    ]));
-
-    // 字体 — 重点展示
-    const fontList = c.fonts ? c.fonts.split(',').filter(Boolean) : [];
-    cards.push(card('system','system','SYSTEM','🔤','字体指纹（Canvas measureText 检测）', [
-      {k:'已安装字体', v:c.fonts||'未检测到'},
-      {k:'字体数量', v:fontList.length + ' 个'},
-      {k:'检测方法', v:'ctx.font="72px 目标字体" → measureText("mmmmmmmmlli").width'},
-      {k:'基线字体', v:'monospace（等宽字体作为基准宽度）'}
-    ]));
-
-    // 硬件
-    const hw=c.hardware;
-    cards.push(card('system','system','SYSTEM','💻','硬件信息', [
-      {k:'设备内存 (RAM)', v:hw.deviceMemory?hw.deviceMemory+' GB':'N/A'},
-      {k:'CPU 逻辑核心数', v:hw.hardwareConcurrency},
-      {k:'触摸点数', v:hw.maxTouchPoints>0?`${hw.maxTouchPoints}（触摸设备）`:'0（非触摸设备）'},
-      {k:'操作系统平台', v:hw.platform}
-    ]));
-
-    // 时区
-    const tz=c.timezone;
-    cards.push(card('system','system','SYSTEM','🌍','时区 & 语言', [
-      {k:'IANA 时区', v:tz.timezone, h:1},
-      {k:'UTC 偏移', v:tz.timezoneOffset+' 分钟'},
-      {k:'偏好语言', v:Array.isArray(tz.languages)?tz.languages.join(', '):tz.languages},
-      {k:'界面语言', v:tz.language}
-    ]));
-
-    // 反指纹检测
-    const fb=c.farblingDetected, wi=c.webglInterception, ua=c.uaReduction;
-    cards.push(card('detect','detect','DETECT','🛡️','反指纹保护检测', [
-      {k:'Canvas Farbling（噪声注入）', v:fb?'⚠️ 已启用 — Brave/Firefox RFP 模式':'✅ 未检测到', w:fb, g:!fb},
-      {k:'WebGL 是否可用', v:wi.webglAvailable?'✅ 是':'❌ 否', g:wi.webglAvailable, b:!wi.webglAvailable},
-      {k:'WEBGL_debug_renderer_info 被拦截', v:wi.debugInfoBlocked?'⚠️ 是（GPU 信息被隐藏）':'✅ 否（可获取真实 GPU）', w:wi.debugInfoBlocked, g:!wi.debugInfoBlocked},
-      {k:'真实 GPU 厂商', v:wi.unmaskedVendor||'(已被拦截)', w:!wi.unmaskedVendor, h:!!wi.unmaskedVendor},
-      {k:'真实 GPU 型号', v:wi.unmaskedRenderer||'(已被拦截)', w:!wi.unmaskedRenderer, h:!!wi.unmaskedRenderer},
-      {k:'UA 精简 (Reduction)', v:ua.isReduced?'⚠️ 已启用（版本号被固定）':'✅ 完整 UA', w:ua.isReduced, g:!ua.isReduced},
-      {k:'Chrome 主版本', v:ua.chromeVersion}
-    ]));
-
-    $('grid').innerHTML = cards.join('');
-    setStatus(`✅ 采集完成 · 耗时 ${ms}ms · 共 ${Object.keys(c).length} 个指纹维度`, 'done');
+    const dims = [
+      makeCanvasDim(c),
+      makeWebglDim(c),
+      makeAudioDim(c),
+      makeFontDim(c),
+      makeHardwareDim(c),
+      makeEnvironmentDim(),
+      makeTimezoneDim(c),
+      makeDetectDim(c)
+    ];
+    $('metaDims').textContent = dims.length + ' 项';
+    renderDims(dims, window._activeDim || 'canvas');
+    setStatus(`采集完成 · 耗时 ${ms} ms · 共 ${dims.length} 个维度`, 'done');
     window._lastReport = { visitorId, components:c, elapsed:ms };
   } catch(e) {
-    $('btnRun').disabled = false; $('visitorId').classList.remove('pending-anim'); $('visitorId').textContent='采集失败';
-    setStatus('❌ 采集失败: '+e.message, 'error'); console.error(e);
+    $('btnRun').disabled = false;
+    $('visitorId').classList.remove('pending-anim');
+    $('visitorId').textContent = '采集失败';
+    $('specimenState').textContent = '采集失败';
+    setStatus('采集失败: ' + e.message, 'error');
+    console.error(e);
   } finally { $('btnRun').disabled = false; }
 };
 
 window.runSingleTest = async function(type) {
-  const m=window._m, t0=performance.now();
-  setStatus(`⏳ 正在采集 ${type} 指纹…`, 'running');
-  const cards=[];
+  const m = window._m, t0 = performance.now();
+  const label = {canvas:'Canvas', webgl:'WebGL', audio:'Audio', anti:'反指纹检测'}[type] || type;
+  setStatus(`正在采集 ${label}…`, 'running');
+  $('specimenState').textContent = '单项采集';
   try {
-    switch(type) {
-      case 'canvas': {
-        const a=m.getCanvasFingerprint(), b=m.getCanvasFingerprintAdvanced();
-        cards.push(card('canvas','canvas','CANVAS','🎨','Canvas 基础指纹',[{k:'MD5 哈希',v:a.hash,h:1},{k:'原始数据',v:trunc(a.rawData,80)}]));
-        cards.push(card('canvas','canvas','CANVAS','🎨','Canvas 高级指纹',[{k:'MD5 哈希',v:b.hash,h:1},{k:'稳定性',v:b.isStable?'✅ 稳定':'⚠️ Farbling',w:!b.isStable}]));
-        break;
-      }
-      case 'webgl': {
-        const a=m.getWebGLFingerprint(), b=m.getAdvancedWebGLFingerprint();
-        if(a){const rows=[{k:'完整串',v:trunc(a,110)}];a.split('|').forEach(i=>{const[k,...v]=i.split(':');rows.push({k:'  ▸ '+k,v:v.join(':')||'—'});});cards.push(card('webgl','webgl','WEBGL','🖥️','WebGL GPU 指纹',rows));}
-        else cards.push(card('webgl','webgl','WEBGL','🖥️','WebGL',[{k:'状态',v:'❌ 不可用',b:1}]));
-        cards.push(card('webgl','webgl','WEBGL','🔬','着色器渲染',[{k:'像素值',v:b||'N/A',h:1}]));
-        break;
-      }
-      case 'audio': {
-        const r=await m.getAudioFingerprint();
-        cards.push(card('audio','audio','AUDIO','🔊','Audio 音频指纹',[{k:'MD5 哈希',v:r.hash||'—',h:1},{k:'采样点',v:trunc(r.rawData,110)},{k:'耗时',v:(performance.now()-t0).toFixed(0)+'ms'}]));
-        break;
-      }
-      case 'anti': {
-        const a=m.detectCanvasFarbling(), b=m.detectWebGLInterception(), c=m.detectUAReduction();
-        cards.push(card('detect','detect','DETECT','🛡️','反指纹检测',[
-          {k:'Canvas Farbling',v:a?'⚠️ 已启用':'✅ 未检测到',w:a,g:!a},
-          {k:'WebGL Debug 拦截',v:b.debugInfoBlocked?'⚠️ 是':'✅ 否',w:b.debugInfoBlocked},
-          {k:'真实 GPU',v:b.unmaskedRenderer||'(被拦截)',w:!b.unmaskedRenderer},
-          {k:'UA 精简',v:c.isReduced?'⚠️ 已启用':'✅ 完整',w:c.isReduced}
-        ]));
-        break;
-      }
+    let dims = [];
+    if (type === 'canvas') {
+      const a = m.getCanvasFingerprint();
+      const b = m.getCanvasFingerprintAdvanced();
+      const d1 = makeCanvasDim({canvas:{hash:a.hash, rawData:a.rawData, isStable:true}});
+      d1.id = 'canvas-basic'; d1.label = 'Canvas · 基础'; d1.summary = shortHash(a.hash);
+      const d2 = makeCanvasDim({canvas:{hash:b.hash, rawData:b.rawData, isStable:b.isStable}});
+      d2.id = 'canvas-advanced'; d2.label = 'Canvas · 高级'; d2.summary = shortHash(b.hash);
+      dims = [d1, d2];
+    } else if (type === 'webgl') {
+      dims = [makeWebglDim({webglBasic:m.getWebGLFingerprint(), webglAdvanced:m.getAdvancedWebGLFingerprint()})];
+    } else if (type === 'audio') {
+      const audio = await m.getAudioFingerprint();
+      dims = [makeAudioDim({audio:audio})];
+    } else if (type === 'anti') {
+      dims = [makeDetectDim({
+        farblingDetected:m.detectCanvasFarbling(),
+        webglInterception:m.detectWebGLInterception(),
+        uaReduction:m.detectUAReduction()
+      })];
     }
-    $('grid').innerHTML=cards.join(''); setStatus(`✅ 完成 · 耗时 ${(performance.now()-t0).toFixed(0)}ms`,'done');
-  } catch(e) { setStatus('❌ 失败: '+e.message,'error'); console.error(e); }
+    renderDims(dims, dims[0] && dims[0].id);
+    setStatus(`完成 · 耗时 ${(performance.now()-t0).toFixed(0)} ms`, 'done');
+  } catch(e) { setStatus('采集失败: '+e.message,'error'); console.error(e); }
 };
 
 window.copyReport = function() {
-  if(!window._lastReport){ setStatus('⚠️ 还没有数据，请先采集','error'); return; }
+  if(!window._lastReport){ setStatus('还没有数据，请先采集','error'); return; }
   navigator.clipboard.writeText(JSON.stringify(window._lastReport,null,2)).then(()=>{
-    setStatus('📋 完整指纹报告已复制到剪贴板！','done');
+    setStatus('完整指纹报告已复制到剪贴板','done');
     setTimeout(()=>$('status').style.display='none',2500);
-  }).catch(()=>{ setStatus('❌ 复制失败','error'); });
+  }).catch(()=>{ setStatus('复制失败','error'); });
 };
 
 // ========== 环境 JS 文件生成 ==========
@@ -924,7 +1672,7 @@ window._envCode = null;
 
 window.showEnvCode = function() {
   const report = window._lastReport;
-  if (!report) { alert('请先点击"🔄 采集全部指纹"采集数据'); return; }
+  if (!report) { alert('请先点击「采集全部指纹」采集数据'); return; }
 
   const c = report.components;
   const code = generateStandaloneFile(report);
@@ -932,14 +1680,14 @@ window.showEnvCode = function() {
   $('env-code-content').textContent = code;
   $('env-code-panel').style.display = '';
   $('env-code-panel').scrollIntoView({ behavior: 'smooth' });
-  setStatus('✅ 环境 JS 文件已生成（已自动注入当前浏览器的真实指纹数据）', 'done');
+  setStatus('环境 JS 文件已生成，已注入当前浏览器的真实指纹数据', 'done');
 };
 
 window.copyEnvCode = function() {
   if (!window._envCode) { alert('请先生成环境文件'); return; }
   navigator.clipboard.writeText(window._envCode).then(() => {
-    setStatus('📋 完整环境 JS 代码已复制到剪贴板！粘贴到 fp/ 目录保存为 fp_env_standalone.js 即可', 'done');
-  }).catch(() => setStatus('❌ 复制失败，请手动选中代码复制', 'error'));
+    setStatus('完整环境 JS 代码已复制，粘贴保存为 fp_env_standalone.js 即可', 'done');
+  }).catch(() => setStatus('复制失败，请手动选中代码复制', 'error'));
 };
 
 window.downloadEnvFile = function() {
@@ -949,7 +1697,7 @@ window.downloadEnvFile = function() {
   const a = document.createElement('a');
   a.href = url; a.download = 'fp_env_standalone.js';
   a.click(); URL.revokeObjectURL(url);
-  setStatus('💾 文件已下载: fp_env_standalone.js → 放到 fp/ 目录 → node fp_env_standalone.js', 'done');
+  setStatus('已下载 fp_env_standalone.js，放到项目根目录后执行 node fp_env_standalone.js', 'done');
 };
 
 function generateStandaloneFile(report) {
@@ -1104,7 +1852,19 @@ function generateStandaloneFile(report) {
 '})();\n';
 }
 
-console.log('%c🧬 浏览器指纹实验室 %c就绪','font-size:18px;font-weight:bold;','');
+// 表格在窄屏下横向滚动
+document.querySelectorAll('.guide table').forEach(function(table){
+  if (table.parentElement && table.parentElement.classList.contains('table-wrap')) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'table-wrap';
+  table.parentNode.insertBefore(wrap, table);
+  wrap.appendChild(table);
+});
+
+// 占位条带，采集完成后替换为 visitorId 的位图
+window.renderBarcode('');
+
+console.log('%c浏览器指纹实验室 %c就绪', 'font-size:16px;font-weight:bold;', 'color:#646b5e');
 setTimeout(()=>window.runTest(), 500);
 </script>
 
