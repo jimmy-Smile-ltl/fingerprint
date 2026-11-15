@@ -224,6 +224,11 @@ Detection dimensions (automation, anti-fingerprinting, consistency, WebGL softwa
 annotate an **expected value** on every row; a strong mismatch highlights the row in red and the
 left nav summarizes the number of anomalies. Optional API/capability gaps use amber warnings.
 
+**Battery fingerprint**: the Battery Status API exposes level, charging state and charge/discharge
+times, which sites commonly use as an environment signal. Levels outside 0–100%, negative or NaN
+times are red anomalies; `charging / 100% / charge 0s / discharge ∞` is common on plugged-in
+desktops and is also a default in some VMs/headless environments, so it is only an amber hint.
+
 Boundaries (different collection points, not missing features):
 
 - **TLS / JA3 / JA4**: handshake signals — recorded by the Workers `/api/tls` endpoint or the local

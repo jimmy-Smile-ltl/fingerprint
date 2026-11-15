@@ -268,19 +268,44 @@ async function collectPermissionsStorage() {
 // 8. Battery, sensors, gamepads
 // ---------------------------------------------------------------------------
 async function collectBatterySensors() {
+  const ua = navigator.userAgent || '';
+  const chromium = /Chrome\//.test(ua) || /Edg\//.test(ua);
+  const apiAvailable = typeof navigator.getBattery === 'function';
   let battery = null;
-  if (navigator.getBattery) {
+  let batteryError = null;
+  if (apiAvailable) {
     try {
       const b = await withTimeout(navigator.getBattery(), 900, null);
       if (b) {
+        const level = b.level;
+        const chargingTime = b.chargingTime;
+        const dischargingTime = b.dischargingTime;
+        const levelValid = Number.isFinite(level) && level >= 0 && level <= 1;
+        const chargingTimeValid = chargingTime === Infinity ||
+          (Number.isFinite(chargingTime) && chargingTime >= 0);
+        const dischargingTimeValid = dischargingTime === Infinity ||
+          (Number.isFinite(dischargingTime) && dischargingTime >= 0);
         battery = {
           charging: b.charging,
-          level: Math.round(b.level * 100) / 100,
-          chargingTime: b.chargingTime,
-          dischargingTime: b.dischargingTime
+          level: levelValid ? Math.round(level * 100) / 100 : level,
+          levelText: levelValid ? (Math.round(level * 100) + '%') : String(level),
+          chargingTime: chargingTime,
+          chargingTimeText: chargingTime === Infinity ? '∞' : (chargingTime + ' s'),
+          dischargingTime: dischargingTime,
+          dischargingTimeText: dischargingTime === Infinity ? '∞' : (dischargingTime + ' s'),
+          levelValid,
+          chargingTimeValid,
+          dischargingTimeValid,
+          invalid: !levelValid || !chargingTimeValid || !dischargingTimeValid,
+          // The "plugged in, full, no discharge estimate" pattern is common on
+          // desktops but is also the default returned by many VMs/headless envs.
+          defaultPattern: b.charging === true && level === 1 &&
+            chargingTime === 0 && dischargingTime === Infinity
         };
       }
-    } catch (error) { /* unavailable */ }
+    } catch (error) {
+      batteryError = error.message;
+    }
   }
   const sensorNames = [
     'Accelerometer', 'Gyroscope', 'Magnetometer', 'AmbientLightSensor',
@@ -294,6 +319,9 @@ async function collectBatterySensors() {
     : null;
   return {
     available: true,
+    chromium,
+    apiAvailable,
+    batteryError,
     battery,
     sensors,
     gamepads,

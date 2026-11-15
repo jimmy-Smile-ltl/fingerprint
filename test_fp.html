@@ -680,7 +680,7 @@
           <ul>
             <li>Client Hints · WebGL2 · WebGPU</li>
             <li>WebRTC ICE · 媒体设备 · 语音合成</li>
-            <li>权限 / 存储 / 电池 / 传感器 / 手柄</li>
+            <li>权限 / 存储 / 电池（电量/充电/时间）/ 传感器 / 手柄</li>
             <li>编解码 · Widevine / PlayReady</li>
             <li>CSS 媒体查询 · JS 引擎怪癖</li>
             <li>扩展字体（94 候选）· 扩展 Canvas</li>
@@ -1900,23 +1900,41 @@ function makeSupplementalDims(s) {
   });
 
   // Battery + sensors
-  const battery = (s.batterySensors && s.batterySensors.battery) || null;
-  const sensorNames = s.batterySensors && s.batterySensors.sensors
-    ? Object.keys(s.batterySensors.sensors).filter(function(k){return s.batterySensors.sensors[k];}) : [];
+  const bs = s.batterySensors || {};
+  const battery = bs.battery || null;
+  const sensorNames = bs.sensors
+    ? Object.keys(bs.sensors).filter(function(k){return bs.sensors[k];}) : [];
+  const batteryInvalid = !!(battery && battery.invalid);
+  const batteryDefault = !!(battery && battery.defaultPattern);
+  const batteryMissing = !!bs.chromium && !battery;
+  let batteryNote = '';
+  if (batteryInvalid) {
+    batteryNote = '电池数值非法（电量越界或时间为负/NaN）属于强异常，常见于补环境或伪造实现。';
+  } else if (batteryDefault) {
+    batteryNote = '充电中 / 100% / 充电时间 0 / 放电 ∞ 是插电台式机的常见值，也是许多虚拟机和 headless 环境的默认值；仅作黄色弱提示。';
+  } else if (batteryMissing) {
+    batteryNote = '当前 UA 为 Chromium，但 Battery API 不可用或调用失败；可能是权限策略、隐私设置或 headless 环境。';
+  }
   dims.push({
     id: 'battery', group: '扩展环境', label: '电池与传感器', tag: 'Device', cat: 'system',
-    summary: battery ? ('电量 ' + Math.round((battery.level || 0) * 100) + '%') : (sensorNames.length + ' 类传感器'),
-    principle: '电池状态、传感器构造器与游戏手柄数量补充硬件画像；多数信号需要用户交互或权限。',
-    rows: s.batterySensors && s.batterySensors.available ? [
-      {k:'电池 API', v:battery ? '可用' : '不可用', g:!!battery, w:!battery},
+    alert: batteryInvalid,
+    summary: battery
+      ? ('电量 ' + (battery.levelText || '—') + (batteryDefault ? ' · 默认模式' : '') + (batteryInvalid ? ' · 异常' : ''))
+      : (sensorNames.length + ' 类传感器'),
+    principle: 'Battery Status API 暴露电量、充电状态与充放电时间，是常见的设备指纹与反自动化信号；传感器构造器和游戏手柄数量补充硬件画像。',
+    note: batteryNote,
+    rows: bs.available ? [
+      {k:'电池 API', v:bs.apiAvailable ? (battery ? '可用' : '调用失败') : '不可用', expected:bs.chromium ? '可用' : '不适用（非 Chromium）', g:!!battery, w:batteryMissing},
       {k:'充电中', v:battery ? yesNo(battery.charging) : '—'},
-      {k:'电量', v:battery ? (Math.round(battery.level * 100) + '%') : '—'},
-      {k:'充电时间', v:battery && battery.chargingTime != null ? battery.chargingTime + ' s' : '—'},
-      {k:'放电时间', v:battery && battery.dischargingTime != null ? battery.dischargingTime + ' s' : '—'},
+      {k:'电量', v:battery ? battery.levelText : '—', expected:'0–100%', b:!!battery && !battery.levelValid, g:!!battery && battery.levelValid},
+      {k:'充电时间', v:battery ? battery.chargingTimeText : '—', expected:'≥0 或 ∞', b:!!battery && !battery.chargingTimeValid, g:!!battery && battery.chargingTimeValid},
+      {k:'放电时间', v:battery ? battery.dischargingTimeText : '—', expected:'≥0 或 ∞', b:!!battery && !battery.dischargingTimeValid, g:!!battery && battery.dischargingTimeValid},
+      {k:'默认插电模式', v:battery ? (batteryDefault ? '是（台式机/虚拟机常见）' : '否') : '—', expected:'否（仅弱提示）', w:batteryDefault, g:!!battery && !batteryDefault},
+      ...(bs.batteryError ? [{k:'电池错误', v:bs.batteryError, expected:'无', w:true}] : []),
       {k:'传感器', v:sensorNames.length ? sensorNames.join(', ') : '—'},
-      {k:'游戏手柄', v:s.batterySensors.gamepads == null ? '—' : s.batterySensors.gamepads},
-      {k:'触摸点', v:s.batterySensors.maxTouchPoints == null ? '—' : s.batterySensors.maxTouchPoints}
-    ] : [{k:'状态', v:'不可用', w:1}]
+      {k:'游戏手柄', v:bs.gamepads == null ? '—' : bs.gamepads},
+      {k:'触摸点', v:bs.maxTouchPoints == null ? '—' : bs.maxTouchPoints}
+    ] : [{k:'状态', v:'不可用', expected:'可用', w:1}]
   });
 
   // Codecs + DRM
