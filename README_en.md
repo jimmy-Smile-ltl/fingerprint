@@ -29,9 +29,10 @@ so headless code emits a fingerprint identical to your real browser.
 
 - **Six core dimensions** (`all_fp.js`): Canvas (basic + advanced), WebGL (hardware params + shader pixels),
   Audio, Fonts, Hardware, Timezone — works in both browser and Node.js
-- **25-dimension coverage**: core six plus WebGL2/WebGPU, WebRTC, Client Hints, plugins/extensions,
-  media/voice, permissions/storage, battery/sensors, codecs/DRM, CSS/DOM, JS engine,
-  expanded fonts/Canvas, automation markers, consistency checks and behavior sampling
+- **28-dimension coverage**: core six plus WebGL2/WebGPU, WebRTC, Client Hints, plugins/extensions,
+  media/voice, permissions/storage, battery/sensors, codecs/DRM, CSS/DOM, JS engine, screen & vendor,
+  expanded fonts/Canvas, content blockers, tamper self-check, automation markers, consistency checks
+  and behavior sampling
 - **Visual collection page** (`test_fp.html`): open in browser → auto-collect → grouped dimension nav →
   one-click copy/download of the report
 - **Dimension nav + rich explanations**: each dimension includes multi-paragraph principles and "how to read it" notes; a coverage map documents the L1–L6 layers
@@ -70,6 +71,7 @@ fingerprint/
 ├── deploy/sitemap.xml       # Sitemap (canonical /)
 ├── docs/og-image.png        # 1200×630 social preview
 ├── docs/og-card.html        # OG card source (re-renderable)
+├── docs/fpjs-borrow.md      # Item-by-item comparison with FingerprintJS (borrowed / not borrowed / license)
 ├── wrangler.toml            # Workers static assets (`npx wrangler deploy`)
 └── wrangler.pages.toml      # Pages CLI deploy (optional)
 ```
@@ -134,8 +136,9 @@ const result = await fp.getFingerprint();
 | Detection | `detectCanvasFarbling()` | Canvas noise detection (Brave-style) |
 | | `detectWebGLInterception()` | GPU info interception detection |
 | | `detectUAReduction()` | UA reduction detection |
-| Aggregate | `BrowserFingerprinter` (class) | `.getComponents()` / `.getFingerprint()` (→ `{visitorId, components}`) / `.getShortFingerprint()` |
+| Aggregate | `BrowserFingerprinter` (class) | `.getComponents()` / `.getFingerprint()` (→ `{visitorId, version, components}`) / `.getShortFingerprint()` |
 | | `BrowserFP` | FingerprintJS-compatible: `.load()` / `.getVisitorId()` |
+| | `canonicalComponentString()` / `FINGERPRINT_VERSION` | Canonical component string and fingerprint version (see "Fingerprint version") |
 
 ### fp_env_patch.js (Node env patch, CommonJS)
 
@@ -152,10 +155,12 @@ const result = await fp.getFingerprint();
 
 `collectSupplementalFingerprint()` returns `clientHints`, `webgl2`, `webgpu`, `webrtc`,
 `mediaDevices`, `speech`, `permissionsStorage`, `batterySensors`, `codecsDrm`, `cssDom`,
-`jsEngine`, `fontsExpanded`, `canvasExtra` and `automation`. These signals are displayed as
-separate dimensions and intentionally excluded from the core `visitorId`. The copied report includes
-`supplemental`; the generated Node environment uses only core `components` (Node has no such browser
-APIs). Behavior sampling stores only counts/timing locally — no key contents or coordinates.
+`jsEngine`, `fontsExpanded` (installed list + preset-font widths), `canvasExtra`, `envDetails`
+(screen frame, vendor flavors, `baseLatency`), `contentBlockers`, `tamper` and `automation`. These signals are
+displayed as separate dimensions and intentionally excluded from the core `visitorId`. The copied
+report includes `supplemental`; the generated Node environment uses only core `components` (Node has
+no such browser APIs). Behavior sampling stores only counts/timing locally — no key contents or
+coordinates.
 
 ## Real-World Cases
 
@@ -211,7 +216,7 @@ Case overview:
 4. **toString camouflage** — hijack `Function.prototype.toString` to return `[native code]`
 5. **Verify** — browser vs Node comparison, dimension by dimension (`test_fp_node.js`)
 
-## Expanded fingerprint coverage (25 dimensions)
+## Expanded fingerprint coverage (28 dimensions)
 
 Results are grouped in the UI. Supplemental signals are deliberately **not** part of the core
 `visitorId`, so the browser ↔ Node parity demo remains stable.
@@ -220,9 +225,12 @@ Results are grouped in the UI. Supplemental signals are deliberately **not** par
 |-------|------------|
 | Core | Canvas / WebGL / Audio / Fonts / Hardware / Timezone |
 | Environment | UA-screen-DPR-network supplement, Client Hints, WebGL2, WebGPU |
+| Environment | Screen & vendor — `availWidth/availHeight` frame vs resolution, `availTop/Left`, color depth, multi-screen, orientation, browser vendor from private globals, `AudioContext.baseLatency` (WebKit only) |
 | Environment | legacy plugins / MIME types and their hash; only built-in PDF plugins — **installed extensions cannot be enumerated** |
 | Environment | WebRTC ICE, media devices, speech voices, permissions/storage, battery/sensors |
-| Environment | codecs/DRM, CSS/DOM media features, JS-engine quirks, expanded fonts (94), extra Canvas renders |
+| Environment | codecs/DRM, CSS/DOM media features, JS-engine quirks, expanded fonts (94 + preset serif/sans/mono/system widths), extra Canvas renders |
+| Adversarial | content blockers — 17 ad decoys probed via `offsetParent` and a block ratio; says "content filtering exists", not "automation" |
+| Adversarial | tamper self-check — 10 native functions still returning `[native code]` through `Function.prototype.toString`, plus structural traits (`navigator.plugins` [[Class]], `document.all`, prototypes) |
 | Adversarial | Farbling / WebGL interception / UA reduction, automation markers (webdriver/CDP/Headless), UA-vs-CH/platform/timezone consistency |
 | Behavior | local-only pointer path length, average/peak speed, clicks, keys, touches, scrolls |
 
@@ -244,6 +252,32 @@ DPI, fullscreen and DevTools commonly make `inner > outer`.
 times, which sites commonly use as an environment signal. Levels outside 0–100%, negative or NaN
 times are red anomalies; `charging / 100% / charge 0s / discharge ∞` is common on plugged-in
 desktops and is also a default in some VMs/headless environments, so it is only an amber hint.
+
+### Fingerprint version (comparability of visitorId)
+
+The `visitorId` returned by `getFingerprint()` is the hash of a **canonical component string**, not a
+concatenation of arbitrary fields:
+
+- only the 7 identity components are included (Canvas, WebGL basic/advanced, Audio, Fonts,
+  Hardware, Timezone), joined in a fixed order (independent of object enumeration order)
+- each component is `key:JSON.stringify(value)`, missing ones become `error`, and `:`, `|`, `\` are escaped
+- any change in the component set or hashing rule requires bumping `FINGERPRINT_VERSION`
+
+This mirrors FingerprintJS's component-hashing model: **identifiers from different versions are not
+comparable**. This project is at `v1`; the report always emits `visitorId` alongside `version`, so
+compare the version first.
+
+### Relationship to FingerprintJS
+
+We read the source of [FingerprintJS v5.3.0](https://github.com/fingerprintjs/fingerprintjs) (MIT) and
+**borrowed ideas, not code**: component hashing with an explicit version policy, collecting async
+sources first (WebGL last, because it affects Canvas), decoy elements for content-blocker detection,
+`screen.availTop/Left`, vendor detection via private globals, preset-font rendering widths, and
+reading `AudioContext.baseLatency` only on WebKit. We did **not** copy its commercial-only features
+(tamper detection, confidence scoring) — our tamper self-check is our own implementation and only
+raises amber hints.
+
+See [`docs/fpjs-borrow.md`](docs/fpjs-borrow.md) for the item-by-item comparison.
 
 Boundaries (different collection points, not missing features):
 

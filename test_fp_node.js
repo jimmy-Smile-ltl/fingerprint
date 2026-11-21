@@ -190,6 +190,7 @@ if (presetName) {
     const elapsed = Date.now() - startTime;
 
     console.log('  Visitor ID:  ' + result.visitorId);
+    console.log('  Version:     ' + result.version + '（版本不同则 Visitor ID 不可直接比较）');
     console.log('  Components:  ' + Object.keys(result.components).length);
     console.log('  Time:        ' + elapsed + 'ms');
   } catch (e) {

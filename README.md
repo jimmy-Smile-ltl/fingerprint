@@ -29,8 +29,9 @@
 
 - **六大核心维度**（`all_fp.js`）：Canvas（基础 + 高级）、WebGL（硬件参数 + 着色器像素）、
   Audio、字体、硬件、时区，浏览器与 Node.js 双环境通用
-- **25 个维度全面覆盖**：核心六维 + WebGL2/WebGPU、WebRTC、Client Hints、插件/扩展、媒体/语音、
-  权限/存储、电池/传感器、编解码/DRM、CSS/DOM、JS 引擎、扩展字体/Canvas、自动化检测、一致性检测、行为采样
+- **28 个维度全面覆盖**：核心六维 + WebGL2/WebGPU、WebRTC、Client Hints、插件/扩展、媒体/语音、
+  权限/存储、电池/传感器、编解码/DRM、CSS/DOM、JS 引擎、屏幕与品牌、扩展字体/Canvas、
+  内容拦截器、篡改自检、自动化检测、一致性检测、行为采样
 - **可视化采集页面**（`test_fp.html`）：浏览器打开 → 自动采集 → 分组维度导航 → 一键复制/下载报告
 - **维度导航 + 丰富原理**：每个维度包含多段技术原理与「怎么读」要点；「指纹覆盖地图」说明 L1–L6 分层与边界
 - **案例导读**：19 个案例按 L1–L6 分组，卡片给出「机制 / 排查 / 本项目对应」，并链接到完整案例目录
@@ -68,6 +69,7 @@ fingerprint/
 ├── deploy/sitemap.xml       # 站点地图（canonical /）
 ├── docs/og-image.png        # 1200×630 社交预览图
 ├── docs/og-card.html        # OG 卡片源文件（可重新截图）
+├── docs/fpjs-borrow.md      # 与 FingerprintJS 的逐项对照（借鉴 / 未借鉴 / 许可）
 ├── wrangler.toml            # Workers 静态资源（npx wrangler deploy）
 └── wrangler.pages.toml      # Pages 命令行部署（可选）
 ```
@@ -132,8 +134,9 @@ const result = await fp.getFingerprint();
 | 检测 | `detectCanvasFarbling()` | Canvas 噪声检测（Brave 类） |
 | | `detectWebGLInterception()` | GPU 信息拦截检测 |
 | | `detectUAReduction()` | UA 缩减检测 |
-| 综合 | `BrowserFingerprinter`（class） | `.getComponents()` / `.getFingerprint()`（→ `{visitorId, components}`）/ `.getShortFingerprint()` |
+| 综合 | `BrowserFingerprinter`（class） | `.getComponents()` / `.getFingerprint()`（→ `{visitorId, version, components}`）/ `.getShortFingerprint()` |
 | | `BrowserFP` | FingerprintJS 兼容接口：`.load()` / `.getVisitorId()` |
+| | `canonicalComponentString()` / `FINGERPRINT_VERSION` | 规范化组件串与指纹版本号（见下文「指纹版本」） |
 
 ### fp_env_patch.js（Node 补环境，CommonJS）
 
@@ -158,7 +161,10 @@ const result = await fp.getFingerprint();
 | `mediaDevices` / `speech` | 媒体设备数量、TTS 语音列表 |
 | `permissionsStorage` / `batterySensors` | 权限、配额、电池、传感器、手柄 |
 | `codecsDrm` / `cssDom` / `jsEngine` | 编解码与 DRM、媒体查询、JS 引擎怪癖 |
-| `fontsExpanded` / `canvasExtra` | 94 候选字体、额外 Canvas 渲染 |
+| `fontsExpanded` / `canvasExtra` | 94 候选字体 + 预设字体渲染宽度（`preferences`）、额外 Canvas 渲染 |
+| `envDetails` | 屏幕边框（availTop/Left）、色深、多屏、方向、浏览器品牌、`baseLatency` |
+| `contentBlockers` | 诱饵元素拦截数量、比例与结论 |
+| `tamper` | 原生函数 toString 自检与原型链结构检查 |
 | `automation` | webdriver / CDP / Headless 线索 |
 
 > 这些结果不进入 core `visitorId`；`test_fp.html` 将它们作为独立维度展示。复制报告会包含
@@ -219,7 +225,7 @@ const result = await fp.getFingerprint();
 4. **toString 伪装** — `Function.prototype.toString` 劫持，返回 `[native code]`
 5. **验证** — 浏览器 vs Node 逐项对比（`test_fp_node.js`）
 
-## 🧩 扩展指纹覆盖（25 个维度）
+## 🧩 扩展指纹覆盖（28 个维度）
 
 页面采集结果按三组展示；**扩展项不进入 core visitorId**，避免破坏浏览器 ↔ Node 的一致性。
 
@@ -227,11 +233,14 @@ const result = await fp.getFingerprint();
 |------|------|---------|
 | 核心指纹 | Canvas / WebGL / Audio / 字体 / 硬件 / 时区 | 像素哈希、GPU 参数、波形采样、字体列表、CPU/RAM、IANA 时区 |
 | 扩展环境 | 环境补充 / Client Hints / WebGL2 / WebGPU | UA、屏幕、DPR、网络信息；UA-CH 高熵值；GPU 上限/adapter |
+| 扩展环境 | 屏幕与品牌 | `availWidth/availHeight` 与分辨率的边框差；`availTop/Left`；色深、多屏、方向；私有全局对象识别浏览器品牌；WebKit 上的 `AudioContext.baseLatency` |
 | 扩展环境 | 插件与扩展 | `navigator.plugins` / MIME 与指纹；只有内置 PDF 插件，**扩展列表不可枚举**（已知扩展探测需预置 ID + WAR） |
 | 扩展环境 | WebRTC / 媒体设备 / 语音合成 | ICE 候选与类型；摄像头/麦克风/扬声器数量；TTS 语音列表 |
 | 扩展环境 | 权限与存储 / 电池与传感器 | Permissions 状态、配额、localStorage；电量、传感器构造器、手柄 |
 | 扩展环境 | 编解码与 DRM / CSS·DOM / JS 引擎 | H.264/HEVC/AV1、Widevine/PlayReady；媒体查询、CSS.supports；Math/Intl/错误栈 |
-| 扩展环境 | 扩展字体 / 扩展 Canvas | 94 个候选字体的安装列表；渐变文字、emoji、混合模式、evenodd 画布 |
+| 扩展环境 | 扩展字体 / 扩展 Canvas | 94 个候选字体的安装列表 + 四类预设字体的默认渲染宽度（serif/sans/mono/system）；渐变文字、emoji、混合模式、evenodd 画布 |
+| 对抗与行为 | 内容拦截器 | 17 个广告诱饵元素的 `offsetParent` 探测与拦截比例；只说明有内容过滤，不是自动化信号 |
+| 对抗与行为 | 篡改自检 | 10 个原生函数经 `Function.prototype.toString` 是否仍返回 `[native code]`；`navigator.plugins` 的 [[Class]]、`document.all`、原型链等结构特征 |
 | 对抗与行为 | 反指纹检测 / 自动化检测 / 一致性检测 | Farbling、WebGL 拦截、UA 精简；webdriver、CDP 标记、Headless UA；UA vs CH/平台/时区交叉校验 |
 | 对抗与行为 | 行为采样 | 指针轨迹长度、平均/峰值速度、点击、按键、触摸、滚动（仅本地统计） |
 
@@ -248,6 +257,29 @@ Web Accessible Resources，仅适用于部分 Chromium 扩展，MV3 的动态 UR
 **电池指纹**：`Battery Status API` 的电量、充电中、充电时间、放电时间也是站点常见的环境信号。
 电量超出 `0–100%`、时间为负或 NaN 会红色告警；`充电中 / 100% / 充电 0s / 放电 ∞` 是插电台式机
 常见值，也是部分虚拟机/headless 的默认值，因此只做黄色弱提示。
+
+### 指纹版本（visitorId 的可比范围）
+
+`getFingerprint()` 返回的 `visitorId` 由**规范化组件串**哈希得到，而不是把任意字段直接拼起来：
+
+- 只取参与身份的 7 个组件（Canvas、WebGL 基础/高级、Audio、字体、硬件、时区），按固定顺序拼接
+  （不依赖对象枚举顺序）
+- 每个组件按 `key:JSON.stringify(value)` 输出，缺失记为 `error`，并对 `:`、`|`、`\` 做转义
+- 组件集合或计算口径一变就必须升 `FINGERPRINT_VERSION`
+
+这和 FingerprintJS 的组件哈希思路一致：**不同版本的指纹不可直接比较**。本项目当前为 `v1`，
+报告里同时写出 `visitorId` 与 `version`，跨版本比对时先看版本号再比 ID。
+
+### 与 FingerprintJS 的关系
+
+我们通读了 [FingerprintJS v5.3.0](https://github.com/fingerprintjs/fingerprintjs)（MIT）的源码，
+**借用了它的思路而不是代码**：组件规范化哈希与版本策略、异步源先采（WebGL 最后，因为它会影响
+Canvas）、诱饵元素探测内容拦截器、`screen.availTop/Left` 边框、私有全局对象识别浏览器品牌、
+预设字体渲染宽度，以及只在 WebKit 上读 `AudioContext.baseLatency` 的取舍。
+**没有照搬**它的闭源能力（如 tamper 检测、指纹置信度），本项目的「篡改自检」是自己实现的，
+只做黄色提示、不参与异常判定。
+
+逐项对照见 [`docs/fpjs-borrow.md`](docs/fpjs-borrow.md)。
 
 ### 边界（不是“遗漏”，是采集位置不同）
 

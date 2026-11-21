@@ -63,6 +63,7 @@
     background: var(--paper-2); font-family: var(--mono); font-size: 14px;
     line-height: 1.4; color: var(--ink-2);
   }
+  .chips .brk { flex-basis: 100%; height: 0; border: 0; padding: 0; }
   .specimen {
     width: 300px; flex: 0 0 300px; align-self: center;
     border: 1.5px solid var(--ink); border-left: 4px solid var(--accent);
@@ -98,17 +99,20 @@
   <div class="card">
     <div class="top">
       <span class="brand"><b>■</b> 指纹实验室 / FINGERPRINT LAB</span>
-      <span class="tag">LOCAL-FIRST · 25 DIMENSIONS</span>
+      <span class="tag">LOCAL-FIRST · 28 DIMENSIONS</span>
     </div>
 
     <div class="hero">
       <div class="hero-copy">
         <span class="kicker">BROWSER FINGERPRINT LAB</span>
         <h1>浏览器指纹<br>实验室</h1>
-        <h2><em>25 个维度</em>，一次本地采集</h2>
+        <h2><em>28 个维度</em>，一次本地采集</h2>
         <div class="chips">
           <span>Canvas</span><span>WebGL</span><span>Audio</span><span>Fonts</span>
-          <span>Client Hints</span><span>WebRTC</span><span>Plugins</span><span>JA3 / TLS</span>
+          <span>Client Hints</span>
+          <span class="brk" aria-hidden="true"></span>
+          <span>WebRTC</span><span>Plugins</span><span>Blockers</span>
+          <span>Tamper</span><span>JA3 / TLS</span>
         </div>
       </div>
       <div class="specimen">
@@ -121,7 +125,7 @@
           <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
         </div>
         <div class="meta">
-          <div><strong>25</strong>覆盖维度</div>
+          <div><strong>28</strong>覆盖维度</div>
           <div><strong>本地</strong>数据不上传</div>
         </div>
       </div>

@@ -52,6 +52,44 @@ function md5Hash(data) {
   return md5(data);
 }
 
+/**
+ * 指纹算法版本。
+ *
+ * 只要参与 visitorId 的组件集合、顺序或规范化规则发生变化，就必须升级这个版本号：
+ * 不同版本产出的 visitorId 不能直接比较。FingerprintJS 也是同样的策略，并在结果里返回 version
+ * （见其 docs/version_policy.md）。
+ */
+const FINGERPRINT_VERSION = 'v1';
+
+/**
+ * 把组件规范化成可哈希字符串。
+ *
+ * 规则参考 FingerprintJS 的 componentsToCanonicalString：
+ *   - 固定键顺序，避免对象属性顺序变化导致哈希漂移
+ *   - 缺失值记为 error，而不是被静默跳过
+ *   - 转义 : | \ 三个分隔符，避免某个组件的值伪造出组件边界
+ *
+ * @param {Object} components
+ * @returns {string}
+ */
+function canonicalComponentString(components) {
+  const entries = [
+    ['canvas', components.canvas && components.canvas.rawData],
+    ['webglBasic', components.webglBasic],
+    ['webglAdvanced', components.webglAdvanced],
+    ['audio', components.audio && components.audio.rawData],
+    ['fonts', components.fonts],
+    ['hardware', components.hardware],
+    ['timezone', components.timezone]
+  ];
+  return entries.map(([key, value]) => {
+    const text = value === undefined || value === null
+      ? 'error'
+      : (typeof value === 'string' ? value : JSON.stringify(value));
+    return `${key}:${text.replace(/[:|\\]/g, '\\$&')}`;
+  }).join('|');
+}
+
 // ============================================================================
 // 1. Canvas 指纹 — "像素的秘密"
 // ============================================================================
@@ -741,27 +779,17 @@ class BrowserFingerprinter {
   /**
    * 生成综合指纹哈希
    *
-   * 将各个组件的原始数据拼接后做 MD5，生成稳定的 visitorId。
-   * 每个组件的原始数据在相同设备上保持一致，不同设备间差异显著。
+   * 把各组件按固定顺序规范化后做 MD5，生成稳定的 visitorId。
+   * 结果里的 version 表示算法版本：版本不同时，两个 visitorId 不能直接比较。
    *
-   * @returns {Promise<{visitorId: string, components: Object}>}
+   * @returns {Promise<{visitorId: string, version: string, components: Object}>}
    */
   async getFingerprint() {
     const components = await this.getComponents();
 
-    // 组合所有维度（用 '::' 分隔，避免哈希碰撞）
-    const combined = [
-      components.canvas.rawData || '',
-      components.webglBasic || '',
-      components.webglAdvanced || '',
-      components.audio.rawData || '',
-      components.fonts || '',
-      JSON.stringify(components.hardware),
-      JSON.stringify(components.timezone)
-    ].join('::');
-
     return {
-      visitorId: md5Hash(combined),
+      visitorId: md5Hash(canonicalComponentString(components)),
+      version: FINGERPRINT_VERSION,
       components: components
     };
   }
@@ -1000,6 +1028,8 @@ export {
   // 工具
   hashString,
   md5Hash,
+  FINGERPRINT_VERSION,
+  canonicalComponentString,
 
   // Canvas
   getCanvasFingerprint,
